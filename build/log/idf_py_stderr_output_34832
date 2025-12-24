@@ -1,0 +1,9 @@
+Command: cmake -G Ninja -DPYTHON_DEPS_CHECKED=1 -DPYTHON=D:\Espressif\python_env\idf5.5_py3.11_env\Scripts\python.exe -DESP_PLATFORM=1 -DSDKCONFIG='d:\Documents\test\esp32\ESP32-TouchPad\sdkconfig' -DCCACHE_ENABLE=1 D:\Documents\test\esp32\ESP32-TouchPad
+fatal: detected dubious ownership in repository at 'D:/Espressif/frameworks/esp-idf-v5.5.1'
+'D:/Espressif/frameworks/esp-idf-v5.5.1' is owned by:
+	(inconvertible) (S-1-5-21-2569233674-2126559890-1140324708-1001)
+but the current user is:
+	DESKTOP-T7F1NP7/barryblueice (S-1-5-21-1485782697-1230434502-1769729069-1001)
+To add an exception for this directory, call:
+
+	git config --global --add safe.directory D:/Espressif/frameworks/esp-idf-v5.5.1

@@ -1,0 +1,2 @@
+source D:/Documents/test/esp32/ESP32-TouchPad/build/bootloader/gdbinit/symbols
+source D:/Documents/test/esp32/ESP32-TouchPad/build/bootloader/gdbinit/connect

@@ -1,0 +1,20 @@
+# Load esp32s2 ROM ELF symbols
+define target hookpost-remote
+set confirm off
+  # if $_streq((char *) 0x3ffaf34b, "Oct 25 2019")
+  if (*(int*) 0x3ffaf34b) == 0x2074634f && (*(int*) 0x3ffaf34f) == 0x32203532 && (*(int*) 0x3ffaf353) == 0x393130
+    add-symbol-file D:/Espressif/tools/esp-rom-elfs/20241011/esp32s2_rev0_rom.elf
+  else
+    echo Warning: Unknown esp32s2 ROM revision.\n
+  end
+set confirm on
+end
+
+
+# Load bootloader symbols
+set confirm off
+    # Bootloader elf was not found
+set confirm on
+
+# Load application symbols
+file D:/Documents/test/esp32/ESP32-TouchPad/build/bootloader/bootloader.elf
