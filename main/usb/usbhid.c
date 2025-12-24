@@ -327,7 +327,7 @@ void usbhid_task(void *arg) {
     
     // 2. 确保频率不为 0。如果你的 Tick 是 100Hz，pdMS_TO_TICKS(5) 会变成 0
     // 建议至少使用 10ms，或者在 menuconfig 中调高 FreeRTOS HZ
-    const TickType_t xFrequency = pdMS_TO_TICKS(1); 
+    const TickType_t xFrequency = pdMS_TO_TICKS(5); 
 
     while (1) {
         // 使用 vTaskDelayUntil 保证频率稳定
