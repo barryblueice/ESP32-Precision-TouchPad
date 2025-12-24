@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "ESP32-TouchPad",
-    "project_version":    "34b42fd",
+    "project_version":    "d03f80d-dirty",
     "project_path":       "D:/Documents/test/esp32/ESP32-TouchPad",
     "idf_path":           "D:/Espressif/frameworks/esp-idf-v5.5.1",
     "build_dir":          "D:/Documents/test/esp32/ESP32-TouchPad/build",
