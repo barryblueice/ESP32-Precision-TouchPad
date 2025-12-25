@@ -127,7 +127,6 @@ typedef struct __attribute__((packed)) {
 
 void usbhid_task(void *arg) {
     tp_multi_msg_t msg;
-    uint16_t sc_time = 0;
     
     while (1) {
         if (xQueueReceive(tp_queue, &msg, portMAX_DELAY)) {
@@ -143,8 +142,8 @@ void usbhid_task(void *arg) {
                 report.contact_count = 0;
             }
 
-            sc_time += 100;
-            report.scan_time = sc_time;
+            uint64_t now = esp_timer_get_time();
+            report.scan_time = (uint16_t)((now / 100) & 0xFFFF);
 
             // 调用 TinyUSB 发送
             tud_hid_report(REPORTID_TOUCHPAD, &report, sizeof(report));
