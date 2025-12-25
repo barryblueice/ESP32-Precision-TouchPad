@@ -5,7 +5,7 @@
   "idf.openOcdConfigs": [
     "board/esp32-wrover-kit-3.3v.cfg"
   ],
-  "idf.portWin": "COM8",
+  "idf.portWin": "COM11",
   "idf.toolsPathWin": "D:\\Espressif",
   "idf.customExtraVars": {
     "IDF_TARGET": "esp32s2"

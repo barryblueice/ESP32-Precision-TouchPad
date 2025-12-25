@@ -29,38 +29,132 @@ static const uint8_t hid_report_descriptor[] = {
     0x09, 0x05,                         // USAGE (Touch Pad)
     0xa1, 0x01,                         // COLLECTION (Application)
     0x85, REPORTID_TOUCHPAD,            //   REPORT_ID (Touch pad)
-    0x09, 0x22,                         //   USAGE (Finger)
-    0xa1, 0x02,                         //   COLLECTION (Logical)
-    0x15, 0x00,                         //       LOGICAL_MINIMUM (0)
-    0x25, 0x01,                         //       LOGICAL_MAXIMUM (1)
-    0x09, 0x47,                         //       USAGE (Confidence)
-    0x09, 0x42,                         //       USAGE (Tip switch)
-    0x95, 0x02,                         //       REPORT_COUNT (2)
-    0x75, 0x01,                         //       REPORT_SIZE (1)
-    0x81, 0x02,                         //       INPUT (Data,Var,Abs)
-    0x95, 0x01,                         //       REPORT_COUNT (1)
-    0x75, 0x02,                         //       REPORT_SIZE (2)
-    0x25, 0x02,                         //       LOGICAL_MAXIMUM (2)
-    0x09, 0x51,                         //       USAGE (Contact Identifier)
-    0x81, 0x02,                         //       INPUT (Data,Var,Abs)
-    0x75, 0x01,                         //       REPORT_SIZE (1)
-    0x95, 0x04,                         //       REPORT_COUNT (4)
-    0x81, 0x03,                         //       INPUT (Cnst,Var,Abs)
-    0x05, 0x01,                         //       USAGE_PAGE (Generic Desk..
-    0x15, 0x00,                         //       LOGICAL_MINIMUM (0)
-    0x26, 0xff, 0x0f,                   //       LOGICAL_MAXIMUM (4095)
-    0x75, 0x10,                         //       REPORT_SIZE (16)
-    0x55, 0x0e,                         //       UNIT_EXPONENT (-2)
-    0x65, 0x13,                         //       UNIT(Inch,EngLinear)
-    0x09, 0x30,                         //       USAGE (X)
-    0x35, 0x00,                         //       PHYSICAL_MINIMUM (0)
-    0x46, 0x90, 0x01,                   //       PHYSICAL_MAXIMUM (400)
-    0x95, 0x01,                         //       REPORT_COUNT (1)
-    0x81, 0x02,                         //       INPUT (Data,Var,Abs)
-    0x46, 0x13, 0x01,                   //       PHYSICAL_MAXIMUM (275)
-    0x09, 0x31,                         //       USAGE (Y)
-    0x81, 0x02,                         //       INPUT (Data,Var,Abs)
-    0xc0,                               //    END_COLLECTION
+
+    0x09, 0x22,                         // USAGE (Finger)
+    0xA1, 0x02,                         // COLLECTION (Logical)
+    0x05, 0x0D,                         //   USAGE_PAGE (Digitizers)
+    0x09, 0x47,                         //   USAGE (Confidence)
+    0x09, 0x42,                         //   USAGE (Tip Switch)
+    0x15, 0x00,                         //   LOGICAL_MINIMUM (0)
+    0x25, 0x01,                         //   LOGICAL_MAXIMUM (1)
+    0x75, 0x01,                         //   REPORT_SIZE (1)
+    0x95, 0x02,                         //   REPORT_COUNT (2)
+    0x81, 0x02,                         //   INPUT (Data,Var,Abs)
+    0x09, 0x51,                         //   USAGE (Contact Identifier)
+    0x25, 0x3F,                         //   LOGICAL_MAXIMUM (63) -> 足够支持5指
+    0x75, 0x06,                         //   REPORT_SIZE (6) -> 2+6=8bits，正好凑齐1字节
+    0x95, 0x01,                         //   REPORT_COUNT (1)
+    0x81, 0x02,                         //   INPUT (Data,Var,Abs)
+    0x05, 0x01,                         //   USAGE_PAGE (Generic Desktop)
+    0x26, 0xFF, 0x0F,                   //   LOGICAL_MAXIMUM (4095)
+    0x75, 0x10,                         //   REPORT_SIZE (16)
+    0x95, 0x01,                         //   REPORT_COUNT (1)
+    0x09, 0x30,                         //   USAGE (X)
+    0x81, 0x02,                         //   INPUT (Data,Var,Abs)
+    0x09, 0x31,                         //   USAGE (Y)
+    0x81, 0x02,                         //   INPUT (Data,Var,Abs)
+    0xC0,                              //    END_COLLECTION
+
+    0x09, 0x22,                         // USAGE (Finger)
+    0xA1, 0x02,                         // COLLECTION (Logical)
+    0x05, 0x0D,                         //   USAGE_PAGE (Digitizers)
+    0x09, 0x47,                         //   USAGE (Confidence)
+    0x09, 0x42,                         //   USAGE (Tip Switch)
+    0x15, 0x00,                         //   LOGICAL_MINIMUM (0)
+    0x25, 0x01,                         //   LOGICAL_MAXIMUM (1)
+    0x75, 0x01,                         //   REPORT_SIZE (1)
+    0x95, 0x02,                         //   REPORT_COUNT (2)
+    0x81, 0x02,                         //   INPUT (Data,Var,Abs)
+    0x09, 0x51,                         //   USAGE (Contact Identifier)
+    0x25, 0x3F,                         //   LOGICAL_MAXIMUM (63) -> 足够支持5指
+    0x75, 0x06,                         //   REPORT_SIZE (6) -> 2+6=8bits，正好凑齐1字节
+    0x95, 0x01,                         //   REPORT_COUNT (1)
+    0x81, 0x02,                         //   INPUT (Data,Var,Abs)
+    0x05, 0x01,                         //   USAGE_PAGE (Generic Desktop)
+    0x26, 0xFF, 0x0F,                   //   LOGICAL_MAXIMUM (4095)
+    0x75, 0x10,                         //   REPORT_SIZE (16)
+    0x95, 0x01,                         //   REPORT_COUNT (1)
+    0x09, 0x30,                         //   USAGE (X)
+    0x81, 0x02,                         //   INPUT (Data,Var,Abs)
+    0x09, 0x31,                         //   USAGE (Y)
+    0x81, 0x02,                         //   INPUT (Data,Var,Abs)
+    0xC0,
+
+    0x09, 0x22,                         // USAGE (Finger)
+    0xA1, 0x02,                         // COLLECTION (Logical)
+    0x05, 0x0D,                         //   USAGE_PAGE (Digitizers)
+    0x09, 0x47,                         //   USAGE (Confidence)
+    0x09, 0x42,                         //   USAGE (Tip Switch)
+    0x15, 0x00,                         //   LOGICAL_MINIMUM (0)
+    0x25, 0x01,                         //   LOGICAL_MAXIMUM (1)
+    0x75, 0x01,                         //   REPORT_SIZE (1)
+    0x95, 0x02,                         //   REPORT_COUNT (2)
+    0x81, 0x02,                         //   INPUT (Data,Var,Abs)
+    0x09, 0x51,                         //   USAGE (Contact Identifier)
+    0x25, 0x3F,                         //   LOGICAL_MAXIMUM (63) -> 足够支持5指
+    0x75, 0x06,                         //   REPORT_SIZE (6) -> 2+6=8bits，正好凑齐1字节
+    0x95, 0x01,                         //   REPORT_COUNT (1)
+    0x81, 0x02,                         //   INPUT (Data,Var,Abs)
+    0x05, 0x01,                         //   USAGE_PAGE (Generic Desktop)
+    0x26, 0xFF, 0x0F,                   //   LOGICAL_MAXIMUM (4095)
+    0x75, 0x10,                         //   REPORT_SIZE (16)
+    0x95, 0x01,                         //   REPORT_COUNT (1)
+    0x09, 0x30,                         //   USAGE (X)
+    0x81, 0x02,                         //   INPUT (Data,Var,Abs)
+    0x09, 0x31,                         //   USAGE (Y)
+    0x81, 0x02,                         //   INPUT (Data,Var,Abs)
+    0xC0,
+
+    0x09, 0x22,                         // USAGE (Finger)
+    0xA1, 0x02,                         // COLLECTION (Logical)
+    0x05, 0x0D,                         //   USAGE_PAGE (Digitizers)
+    0x09, 0x47,                         //   USAGE (Confidence)
+    0x09, 0x42,                         //   USAGE (Tip Switch)
+    0x15, 0x00,                         //   LOGICAL_MINIMUM (0)
+    0x25, 0x01,                         //   LOGICAL_MAXIMUM (1)
+    0x75, 0x01,                         //   REPORT_SIZE (1)
+    0x95, 0x02,                         //   REPORT_COUNT (2)
+    0x81, 0x02,                         //   INPUT (Data,Var,Abs)
+    0x09, 0x51,                         //   USAGE (Contact Identifier)
+    0x25, 0x3F,                         //   LOGICAL_MAXIMUM (63) -> 足够支持5指
+    0x75, 0x06,                         //   REPORT_SIZE (6) -> 2+6=8bits，正好凑齐1字节
+    0x95, 0x01,                         //   REPORT_COUNT (1)
+    0x81, 0x02,                         //   INPUT (Data,Var,Abs)
+    0x05, 0x01,                         //   USAGE_PAGE (Generic Desktop)
+    0x26, 0xFF, 0x0F,                   //   LOGICAL_MAXIMUM (4095)
+    0x75, 0x10,                         //   REPORT_SIZE (16)
+    0x95, 0x01,                         //   REPORT_COUNT (1)
+    0x09, 0x30,                         //   USAGE (X)
+    0x81, 0x02,                         //   INPUT (Data,Var,Abs)
+    0x09, 0x31,                         //   USAGE (Y)
+    0x81, 0x02,                         //   INPUT (Data,Var,Abs)
+    0xC0,
+
+    0x09, 0x22,                         // USAGE (Finger)
+    0xA1, 0x02,                         // COLLECTION (Logical)
+    0x05, 0x0D,                         //   USAGE_PAGE (Digitizers)
+    0x09, 0x47,                         //   USAGE (Confidence)
+    0x09, 0x42,                         //   USAGE (Tip Switch)
+    0x15, 0x00,                         //   LOGICAL_MINIMUM (0)
+    0x25, 0x01,                         //   LOGICAL_MAXIMUM (1)
+    0x75, 0x01,                         //   REPORT_SIZE (1)
+    0x95, 0x02,                         //   REPORT_COUNT (2)
+    0x81, 0x02,                         //   INPUT (Data,Var,Abs)
+    0x09, 0x51,                         //   USAGE (Contact Identifier)
+    0x25, 0x3F,                         //   LOGICAL_MAXIMUM (63) -> 足够支持5指
+    0x75, 0x06,                         //   REPORT_SIZE (6) -> 2+6=8bits，正好凑齐1字节
+    0x95, 0x01,                         //   REPORT_COUNT (1)
+    0x81, 0x02,                         //   INPUT (Data,Var,Abs)
+    0x05, 0x01,                         //   USAGE_PAGE (Generic Desktop)
+    0x26, 0xFF, 0x0F,                   //   LOGICAL_MAXIMUM (4095)
+    0x75, 0x10,                         //   REPORT_SIZE (16)
+    0x95, 0x01,                         //   REPORT_COUNT (1)
+    0x09, 0x30,                         //   USAGE (X)
+    0x81, 0x02,                         //   INPUT (Data,Var,Abs)
+    0x09, 0x31,                         //   USAGE (Y)
+    0x81, 0x02,                         //   INPUT (Data,Var,Abs)
+    0xC0,
+
     0x55, 0x0C,                         //    UNIT_EXPONENT (-4)
     0x66, 0x01, 0x10,                   //    UNIT (Seconds)
     0x47, 0xff, 0xff, 0x00, 0x00,      //     PHYSICAL_MAXIMUM (65535)
@@ -260,62 +354,103 @@ void usbhid_init(void) {
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 }
 
+// typedef struct __attribute__((packed)) {
+//     // --- Byte 0: Finger Collection ---
+//     uint8_t confidence   : 1; // Bit 0: Confidence
+//     uint8_t tip_switch   : 1; // Bit 1: Tip Switch
+//     uint8_t contact_id   : 2; // Bit 2-3: Contact ID (Logical Max 2)
+//     uint8_t padding      : 4; // Bit 4-7: Padding (Const)
+
+//     // --- Byte 1-2: X ---
+//     uint16_t x;               // Logical Max 4095
+
+//     // --- Byte 3-4: Y ---
+//     uint16_t y;               // Logical Max 4095
+
+//     // --- Byte 5-6: Scan Time ---
+//     // 你描述符中定义在 Finger Collection 结束后，紧跟 16bit 的 Scan Time
+//     uint16_t scan_time;
+
+//     // --- Byte 7: Contact Count ---
+//     // 你描述符中定义为 8bit
+//     uint8_t contact_count;
+
+//     // --- Byte 8: Buttons ---
+//     uint8_t button_1     : 1; // Bit 0
+//     uint8_t button_2     : 1; // Bit 1
+//     uint8_t button_3     : 1; // Bit 2
+//     uint8_t btn_padding  : 5; // Bit 3-7: Padding 5 bits
+
+// } ptp_report_t;
+
+// void simulate_circle_move() {
+//     static float angle = 0.0f;
+//     static uint16_t timestamp = 0;
+    
+//     // --- 调速区 ---
+//     const float SPEED = 0.04f;   // 因为频率翻倍了，所以 SPEED 要减半才维持原速
+//     const float SIZE = 400.0f;    
+//     // --------------
+
+//     ptp_report_t report = {0};
+//     report.confidence = 1;
+//     report.tip_switch = 1;
+//     report.contact_id = 0; 
+    
+//     report.x = (uint16_t)(2048.0f + cosf(angle) * SIZE);
+//     report.y = (uint16_t)(2048.0f + sinf(angle) * SIZE);
+    
+//     // 重点：5ms 周期对应增加 50，让 Windows 认为数据是连续且等速的
+//     report.scan_time = timestamp;
+//     timestamp += 50; 
+    
+//     report.contact_count = 1; 
+
+//     tud_hid_report(0x01, &report, sizeof(report));
+
+//     angle += SPEED;
+//     if (angle > 6.283185f) angle -= 6.283185f;
+// }
+
 typedef struct __attribute__((packed)) {
-    // --- Byte 0: Finger Collection ---
-    uint8_t confidence   : 1; // Bit 0: Confidence
-    uint8_t tip_switch   : 1; // Bit 1: Tip Switch
-    uint8_t contact_id   : 2; // Bit 2-3: Contact ID (Logical Max 2)
-    uint8_t padding      : 4; // Bit 4-7: Padding (Const)
+    // 状态字节：Bit0:Confidence, Bit1:TipSwitch, Bit2-7:ContactID
+    uint8_t tip_conf_id; 
+    uint16_t x;
+    uint16_t y;
+} finger_t;
 
-    // --- Byte 1-2: X ---
-    uint16_t x;               // Logical Max 4095
-
-    // --- Byte 3-4: Y ---
-    uint16_t y;               // Logical Max 4095
-
-    // --- Byte 5-6: Scan Time ---
-    // 你描述符中定义在 Finger Collection 结束后，紧跟 16bit 的 Scan Time
-    uint16_t scan_time;
-
-    // --- Byte 7: Contact Count ---
-    // 你描述符中定义为 8bit
-    uint8_t contact_count;
-
-    // --- Byte 8: Buttons ---
-    uint8_t button_1     : 1; // Bit 0
-    uint8_t button_2     : 1; // Bit 1
-    uint8_t button_3     : 1; // Bit 2
-    uint8_t btn_padding  : 5; // Bit 3-7: Padding 5 bits
-
+typedef struct __attribute__((packed)) {
+    finger_t fingers[5];    // 描述符复制5遍，这里就对应数组5个元素
+    uint16_t scan_time;     
+    uint8_t contact_count;  
+    uint8_t buttons;        
 } ptp_report_t;
 
-void simulate_circle_move() {
-    static float angle = 0.0f;
+void simulate_dual_scroll() {
+    static uint16_t scroll_y = 1000;
     static uint16_t timestamp = 0;
-    
-    // --- 调速区 ---
-    const float SPEED = 0.04f;   // 因为频率翻倍了，所以 SPEED 要减半才维持原速
-    const float SIZE = 400.0f;    
-    // --------------
-
     ptp_report_t report = {0};
-    report.confidence = 1;
-    report.tip_switch = 1;
-    report.contact_id = 0; 
-    
-    report.x = (uint16_t)(2048.0f + cosf(angle) * SIZE);
-    report.y = (uint16_t)(2048.0f + sinf(angle) * SIZE);
-    
-    // 重点：5ms 周期对应增加 50，让 Windows 认为数据是连续且等速的
-    report.scan_time = timestamp;
-    timestamp += 50; 
-    
-    report.contact_count = 1; 
 
+    // 第一根手指 (ID = 0)
+    report.fingers[0].tip_conf_id = (0 << 2) | 0x03; // ID=0, Confidence=1, Tip=1
+    report.fingers[0].x = 1000;
+    report.fingers[0].y = scroll_y;
+
+    // 第二根手指 (ID = 1)
+    report.fingers[1].tip_conf_id = (1 << 2) | 0x03; // ID=1, Confidence=1, Tip=1
+    report.fingers[1].x = 2000; // 横向拉开距离
+    report.fingers[1].y = scroll_y;
+
+    report.contact_count = 2; // 告诉 Windows 有两根手指
+    report.scan_time = timestamp;
+    timestamp += 50;
+
+    // 发送报表 (ID = 0x01)
     tud_hid_report(0x01, &report, sizeof(report));
 
-    angle += SPEED;
-    if (angle > 6.283185f) angle -= 6.283185f;
+    // 改变 Y 轴坐标实现滚动
+    scroll_y -= 10; 
+    if (scroll_y > 3000) scroll_y = 1000;
 }
 
 // 主循环任务
@@ -334,7 +469,8 @@ void usbhid_task(void *arg) {
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
 
         if (tud_hid_ready()) {
-            simulate_circle_move();
+            // simulate_circle_move();
+            // simulate_dual_scroll();
         }
     }
 }
