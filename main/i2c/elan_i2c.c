@@ -130,7 +130,7 @@ static void parse_ptp_data(uint8_t *buf, tp_multi_msg_t *msg_out) {
         msg_out->fingers[0].x = x;
         msg_out->fingers[0].y = y;
 
-        ESP_LOGD("ELAN_PTP", "ID:%d X:%d Y:%d", contact_id, x, y);
+        // ESP_LOGD("ELAN_PTP", "ID:%d X:%d Y:%d", contact_id, x, y);
     }
 }
 
@@ -155,13 +155,13 @@ void elan_i2c_task(void *arg) {
         if (gpio_get_level(INT_IO) == 0) {
             if (i2c_master_receive(dev_handle, rx_buf, sizeof(rx_buf), pdMS_TO_TICKS(10)) == ESP_OK) {
                 
-                ESP_LOG_BUFFER_HEX("RAW_I2C", rx_buf, 12); 
+                // ESP_LOG_BUFFER_HEX("RAW_I2C", rx_buf, 12); 
 
                 parse_ptp_data(rx_buf, &msg);
 
                 if (msg.actual_count > 0) {
-                    ESP_LOGI("DEBUG", "Touch Detected! Count: %d, X: %d, Y: %d", 
-                             msg.actual_count, msg.fingers[0].x, msg.fingers[0].y);
+                    // ESP_LOGI("DEBUG", "Touch Detected! Count: %d, X: %d, Y: %d", 
+                    //          msg.actual_count, msg.fingers[0].x, msg.fingers[0].y);
                 }
 
                 xQueueSend(tp_queue, &msg, 0);

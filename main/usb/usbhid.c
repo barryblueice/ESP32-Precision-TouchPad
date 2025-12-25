@@ -125,27 +125,47 @@ typedef struct __attribute__((packed)) {
     uint8_t buttons;       // 1 byte
 } ptp_report_t;
 
+static uint16_t last_stable_x = 0;
+static uint16_t last_stable_y = 0;
+
+static const float scale_x = 4095.0f / 3679.0f;
+static const float scale_y = 4095.0f / 2261.0f;
+
+static bool was_touching = false;
+
 void usbhid_task(void *arg) {
     tp_multi_msg_t msg;
-    
     while (1) {
         if (xQueueReceive(tp_queue, &msg, portMAX_DELAY)) {
             ptp_report_t report = {0};
-            
-            if (msg.actual_count > 0) {
-                report.fingers[0].tip_conf_id = 0x03 | (0 << 2); 
-                report.fingers[0].x = (uint16_t)(msg.fingers[0].x * 4095 / 3679);
-                report.fingers[0].y = (uint16_t)(msg.fingers[0].y * 4095 / 2261);
-                report.contact_count = 1;
-            } else {
-                report.fingers[0].tip_conf_id = 0x01;
-                report.contact_count = 0;
-            }
-
             uint64_t now = esp_timer_get_time();
             report.scan_time = (uint16_t)((now / 100) & 0xFFFF);
 
-            // 调用 TinyUSB 发送
+            if (msg.actual_count > 0) {
+                uint16_t current_x = (uint16_t)(msg.fingers[0].x * scale_x);
+                uint16_t current_y = (uint16_t)(msg.fingers[0].y * scale_y);
+
+                int dx = abs((int)current_x - (int)last_stable_x);
+                int dy = abs((int)current_y - (int)last_stable_y);
+                
+                if (!was_touching || dx > 8 || dy > 8) {
+                    last_stable_x = current_x;
+                    last_stable_y = current_y;
+                }
+
+                report.fingers[0].x = last_stable_x;
+                report.fingers[0].y = last_stable_y;
+                report.fingers[0].tip_conf_id = 0x03;
+                report.contact_count = 1;
+                was_touching = true;
+            } else {
+                report.fingers[0].x = last_stable_x;
+                report.fingers[0].y = last_stable_y;
+                report.fingers[0].tip_conf_id = 0x02;
+                report.contact_count = 0;
+                was_touching = false;
+            }
+
             tud_hid_report(REPORTID_TOUCHPAD, &report, sizeof(report));
         }
     }
