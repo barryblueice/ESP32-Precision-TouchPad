@@ -1,4 +1,4 @@
-[English](https://github.com/barryblueice/ESP32-Precision-TouchPad/main/README.md) | [Simplified Chineses](https://github.com/barryblueice/ESP32-Precision-TouchPad/main/README_CN.md)
+[English](https://github.com/barryblueice/ESP32-Precision-TouchPad/blob/main/README.md) | [Simplified Chineses](https://github.com/barryblueice/ESP32-Precision-TouchPad/blob/main/README_CN.md)
 
 # **What's This?**
 
@@ -30,4 +30,5 @@ https://github.com/user-attachments/assets/b2fd1d32-9a8d-46fc-8a0d-ce17007ca7c2
   - [ ] Multi Touch Support
   - [x] Physical Buttons Support (left click & right click)
   - [x] Changing from freertos polling to GPIO interrupt
+
 
