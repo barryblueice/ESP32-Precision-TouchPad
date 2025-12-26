@@ -5,7 +5,7 @@
 A touchpad peripheral device based on ESP32-S2 + ELAN TouchPad (Spare parts from Lenovo's inventory). Compatible with Microsoft Percision TouchPad (PTP) standard. Supported Windows Touch Gesture.
 Also include a HP fingerprint module, in order to support fingerprint for Windows Hello.
 
-https://github.com/user-attachments/assets/b2fd1d32-9a8d-46fc-8a0d-ce17007ca7c2
+https://github.com/user-attachments/assets/256ca4d0-b585-47dc-b8cc-44001de3028a
 
 <img width="1194" height="970" alt="image" src="https://github.com/user-attachments/assets/35bba23a-5c70-4f4c-b9e3-434b141dd59f" />
 
@@ -32,5 +32,3 @@ https://github.com/user-attachments/assets/b2fd1d32-9a8d-46fc-8a0d-ce17007ca7c2
     - [ ] Single Touch / Dual Touch Support
   - [x] Physical Buttons Support (left click & right click)
   - [x] Changing from freertos polling to GPIO interrupt
-
-
