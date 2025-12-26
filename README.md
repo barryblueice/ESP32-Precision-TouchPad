@@ -26,5 +26,5 @@ https://github.com/user-attachments/assets/b2fd1d32-9a8d-46fc-8a0d-ce17007ca7c2
   - [x] **Switching From Mouse Mode (Only One Finger) to Absolute Mode (Supported Multi Finger), [thanks to @ApprehensiveAnt9858](https://www.reddit.com/r/embedded/comments/1j3c2k6/need_help_getting_and_i2c_hid_elan_touchpad_to/)**
   - [x] Single Touch Support
   - [ ] Multi Touch Support
-  - [ ] Change from Freertos polling to GPIO interrupt
+  - [x] Change from freertos polling to GPIO interrupt
 
