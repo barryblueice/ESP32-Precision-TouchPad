@@ -7,7 +7,7 @@
 #include "i2c/elan_i2c.h"
 
 void app_main(void) {
-    tp_queue = xQueueCreate(5, sizeof(tp_multi_msg_t));
+    tp_queue = xQueueCreate(1, sizeof(tp_multi_msg_t));
 
     usbhid_init();
 

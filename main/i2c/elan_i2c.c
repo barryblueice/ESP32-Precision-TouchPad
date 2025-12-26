@@ -127,64 +127,60 @@ static void parse_ptp_report(uint8_t *data, int len, finger_layout_t layout, tp_
 
 void elan_i2c_task(void *arg) {
     elan_i2c_init();
-    
-    tp_multi_msg_t msg_result;
-    memset(&msg_result, 0, sizeof(tp_multi_msg_t));
-    
+    tp_interrupt_init();
+
+    tp_multi_msg_t current_state; 
+    memset(&current_state, 0, sizeof(tp_multi_msg_t));
     uint32_t last_update_ms[5] = {0};
-    uint8_t data[64]; // 预分配缓冲区
+    uint8_t data[64];
+
+    // 定义目标周期，例如 10ms (100Hz)
+    const TickType_t xPeriod = pdMS_TO_TICKS(10);
+    TickType_t xLastWakeTime = xTaskGetTickCount();
 
     while (1) {
-        bool need_to_send = false;
-        uint32_t now = xTaskGetTickCount() * portTICK_PERIOD_MS;
-        while (gpio_get_level(INT_IO) == 0) {
-            if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(5)) == ESP_OK) {
-                if (data[2] == 0x04) { 
-                    uint8_t status = data[3];
-                    uint8_t contact_id = (status & 0xF0) >> 4;
-                    uint16_t raw_x = data[4] | (data[5] << 8);
-                    uint16_t raw_y = data[6] | (data[7] << 8);
-                    bool tip = (status & 0x01);
+        ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(5)); 
 
-                    if (contact_id < 5) {
-                        msg_result.fingers[contact_id].tip_switch = tip ? 1 : 0;
-                        msg_result.fingers[contact_id].x = raw_x;
-                        msg_result.fingers[contact_id].y = raw_y;
-                        msg_result.fingers[contact_id].contact_id = contact_id;
-                        
-                        last_update_ms[contact_id] = now;
-                        need_to_send = true;
+        uint32_t now = xTaskGetTickCount() * portTICK_PERIOD_MS;
+        bool need_send = false;
+
+        while (gpio_get_level(INT_IO) == 0) {
+            if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(2)) == ESP_OK) {
+                if (data[2] == 0x04) {
+                    uint8_t status = data[3];
+                    uint8_t id = (status & 0xF0) >> 4;
+                    if (id < 5) {
+                        current_state.fingers[id].tip_switch = (status & 0x01);
+                        current_state.fingers[id].x = data[4] | (data[5] << 8);
+                        current_state.fingers[id].y = data[6] | (data[7] << 8);
+                        current_state.fingers[id].contact_id = id;
+                        last_update_ms[id] = now;
+                        need_send = true;
                     }
-                    
-                    if (data[11] == 0x81) {
-                        msg_result.button_mask = 0x01; 
-                    } else {
-                        msg_result.button_mask = 0;
-                    }
+                    current_state.button_mask = (data[11] == 0x81) ? 0x01 : 0x00;
                 }
             } else {
                 break;
             }
         }
+
         for (int i = 0; i < 5; i++) {
-            if (msg_result.fingers[i].tip_switch && (now - last_update_ms[i] > 35)) {
-                msg_result.fingers[i].tip_switch = 0;
-                need_to_send = true;
+            if (current_state.fingers[i].tip_switch && (now - last_update_ms[i] > 35)) {
+                current_state.fingers[i].tip_switch = 0;
+                need_send = true;
             }
         }
 
-        if (need_to_send) {
-            uint8_t count = 0;
+        if (need_send) {
+            uint8_t active_count = 0;
             for (int i = 0; i < 5; i++) {
-                if (msg_result.fingers[i].tip_switch) {
-                    count++;
-                }
+                if (current_state.fingers[i].tip_switch) active_count++;
             }
-            msg_result.actual_count = count;
-            xQueueSend(tp_queue, &msg_result, 0);
+            current_state.actual_count = active_count;
+
+            xQueueOverwrite(tp_queue, &current_state);
         }
-        
-        vTaskDelay(pdMS_TO_TICKS(1)); 
+
+        vTaskDelayUntil(&xLastWakeTime, xPeriod);
     }
 }
-
