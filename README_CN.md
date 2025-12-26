@@ -2,7 +2,7 @@
 
 # **这是什么？**
 
-一个基于ESP32-S2 + 义隆ELAN触摸板（来自联想库存备件），支持Microsoft精确式触摸板标准，支持Windows触摸手势。
+一个基于ESP32-S2 + 义隆ELAN触摸板（来自联想库存备件）的USB外设设备，支持Microsoft精确式触摸板标准，支持Windows触摸手势。
 同时包含了一个HP指纹模块，用于Windows Hello指纹登录。
 
 https://github.com/user-attachments/assets/256ca4d0-b585-47dc-b8cc-44001de3028a
@@ -32,5 +32,6 @@ https://github.com/user-attachments/assets/256ca4d0-b585-47dc-b8cc-44001de3028a
     - [ ] 单指单击/双指单击支持
   - [x] 物理按键支持（左键 & 右键）
   - [x] 由freertos轮询切换到GPIO Int中断触发
+
 
 
