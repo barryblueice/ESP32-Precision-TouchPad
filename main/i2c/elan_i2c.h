@@ -18,6 +18,7 @@ typedef struct {
 extern QueueHandle_t tp_queue;
 
 void elan_i2c_task(void *arg);
+void tp_interrupt_init(void);
 
 extern i2c_master_dev_handle_t dev_handle; 
 extern i2c_master_bus_handle_t bus_handle;

@@ -21,6 +21,8 @@ QueueHandle_t tp_queue = NULL;
 i2c_master_dev_handle_t dev_handle = NULL;
 i2c_master_bus_handle_t bus_handle = NULL;
 
+TaskHandle_t tp_read_task_handle = NULL;
+
 static esp_err_t elan_activate_ptp() {
     uint8_t payload[] = {
         0x05, 0x00,             // Command Register
@@ -93,7 +95,7 @@ static void elan_i2c_init(void) {
     i2c_device_config_t dev_cfg = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
         .device_address = I2C_ADDR,
-        .scl_speed_hz = 400000,
+        .scl_speed_hz = 1000000,
     };
     ESP_ERROR_CHECK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
 
@@ -117,26 +119,22 @@ static void parse_ptp_data(uint8_t *buf, tp_multi_msg_t *msg_out) {
     bool tip = (status >> 1) & 0x01;
     uint8_t contact_id = (status >> 4) & 0x0F;
 
-    msg_out->actual_count = 0;
-
-    if (tip && confidence) {
-        msg_out->actual_count = 1;
-        msg_out->fingers[0].tip_switch = 1;
+    if (confidence) {
+        msg_out->actual_count = tip ? 1 : 0;
+        msg_out->fingers[0].tip_switch = tip ? 1 : 0;
         msg_out->fingers[0].contact_id = contact_id;
 
-        uint16_t x = buf[4] | (buf[5] << 8);
-        uint16_t y = buf[6] | (buf[7] << 8);
-
-        msg_out->fingers[0].x = x;
-        msg_out->fingers[0].y = y;
-
-        // ESP_LOGD("ELAN_PTP", "ID:%d X:%d Y:%d", contact_id, x, y);
+        if (tip) {
+            msg_out->fingers[0].x = buf[4] | (buf[5] << 8);
+            msg_out->fingers[0].y = buf[6] | (buf[7] << 8);
+        }
     }
 }
 
 void elan_i2c_task(void *arg) {
     
     elan_i2c_init();
+    tp_interrupt_init();
 
     finger_layout_t layout = parse_finger_layout(hid_report_descriptor, 150);
 
@@ -148,25 +146,23 @@ void elan_i2c_task(void *arg) {
     ESP_LOGI("DEBUG", "Block Size: %d", layout.block_size);
     ESP_LOGI("DEBUG", "Nibble Packed: %s", layout.nibble_packed ? "YES" : "NO");
 
+    if (tp_read_task_handle == NULL) {
+        tp_read_task_handle = xTaskGetCurrentTaskHandle();
+    }
+
     uint8_t rx_buf[64];
     tp_multi_msg_t msg;
 
     while (1) {
-        if (gpio_get_level(INT_IO) == 0) {
-            if (i2c_master_receive(dev_handle, rx_buf, sizeof(rx_buf), pdMS_TO_TICKS(10)) == ESP_OK) {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        while (gpio_get_level(INT_IO) == 0) {
+            if (i2c_master_receive(dev_handle, rx_buf, sizeof(rx_buf), pdMS_TO_TICKS(5)) == ESP_OK) {
                 
-                // ESP_LOG_BUFFER_HEX("RAW_I2C", rx_buf, 12); 
-
                 parse_ptp_data(rx_buf, &msg);
-
-                if (msg.actual_count > 0) {
-                    // ESP_LOGI("DEBUG", "Touch Detected! Count: %d, X: %d, Y: %d", 
-                    //          msg.actual_count, msg.fingers[0].x, msg.fingers[0].y);
-                }
-
                 xQueueSend(tp_queue, &msg, 0);
+            } else {
+                break;
             }
         }
-        vTaskDelay(pdMS_TO_TICKS(2));
     }
 }
