@@ -27,7 +27,9 @@ https://github.com/user-attachments/assets/b2fd1d32-9a8d-46fc-8a0d-ce17007ca7c2
   - [x] ELAN TouchPad驱动
   - [x] **从Mouse Mode (仅支持单指) 切换到Absolute Mode (支持多指), [感谢@ApprehensiveAnt9858](https://www.reddit.com/r/embedded/comments/1j3c2k6/need_help_getting_and_i2c_hid_elan_touchpad_to/)**
   - [x] 单指触摸支持
-  - [ ] 多指触摸支持
+  - [x] 多指触摸支持
+    - [x] 多指滑动手势支持
+    - [ ] 单指单击/双指单击支持
   - [x] 物理按键支持（左键 & 右键）
   - [x] 由freertos轮询切换到GPIO Int中断触发
 
