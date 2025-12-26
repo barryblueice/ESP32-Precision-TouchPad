@@ -95,7 +95,7 @@ static void elan_i2c_init(void) {
     i2c_device_config_t dev_cfg = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
         .device_address = I2C_ADDR,
-        .scl_speed_hz = 1000000,
+        .scl_speed_hz = 800000,
     };
     ESP_ERROR_CHECK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
 
@@ -111,40 +111,58 @@ static void elan_i2c_init(void) {
 }
 
 // PTP 数据解析 (Tip/ID/XY)
-static void parse_ptp_data(uint8_t *buf, tp_multi_msg_t *msg_out) {
-    if (buf[2] != 0x04) return;
+static void parse_ptp_data(uint8_t *data, int len, finger_layout_t layout, tp_multi_msg_t *msg_out) 
+{
+    uint8_t report_id = data[2];
+    if (report_id != 0x04) return;
 
-    uint8_t status = buf[3];
-    bool confidence = (status >> 0) & 0x01;
-    bool tip = (status >> 1) & 0x01;
-    uint8_t contact_id = (status >> 4) & 0x0F;
+    static bool is_detecting_click = false; 
+    static uint8_t locked_button = 0;
 
-    if (confidence) {
-        msg_out->actual_count = tip ? 1 : 0;
-        msg_out->fingers[0].tip_switch = tip ? 1 : 0;
-        msg_out->fingers[0].contact_id = contact_id;
+    memset(msg_out, 0, sizeof(tp_multi_msg_t));
 
-        if (tip) {
-            msg_out->fingers[0].x = buf[4] | (buf[5] << 8);
-            msg_out->fingers[0].y = buf[6] | (buf[7] << 8);
+    uint16_t raw_x = data[4] | (data[5] << 8);
+    uint16_t raw_y = data[6] | (data[7] << 8);
+    
+    bool physical_pressed = (data[11] == 0x81);
+    uint8_t status = data[3];
+    bool tip = (status & 0x01);
+
+    if (physical_pressed) {
+        if (!is_detecting_click) {
+            is_detecting_click = true;
+            if (raw_x > 1700) {
+                locked_button = 0x02;
+            } else {
+                locked_button = 0x01;
+            }
         }
+        msg_out->button_mask = locked_button;
+    } else {
+        is_detecting_click = false;
+        locked_button = 0;
+        msg_out->button_mask = 0;
+    }
+
+    if (tip) {
+        msg_out->actual_count = 1;
+        msg_out->fingers[0].tip_switch = 1;
+        msg_out->fingers[0].x = raw_x;
+        msg_out->fingers[0].y = raw_y;
+    }
+
+    if (physical_pressed) {
+        ESP_LOGD(TAG, "[CLICK] BTN:%d | X:%d | Raw11:%02X", msg_out->button_mask, raw_x, data[11]);
     }
 }
 
 void elan_i2c_task(void *arg) {
-    
     elan_i2c_init();
-    tp_interrupt_init();
+    
+    tp_interrupt_init(); 
 
     finger_layout_t layout = parse_finger_layout(hid_report_descriptor, 150);
-
-    ESP_LOGI("DEBUG", "--- Finger Layout Derived from HID Desc ---");
-    ESP_LOGI("DEBUG", "Tip Offset: %d", layout.tip_offset);
-    ESP_LOGI("DEBUG", "ID Offset:  %d", layout.id_offset);
-    ESP_LOGI("DEBUG", "X Offset:   %d, Size: %d", layout.x_offset, layout.x_size);
-    ESP_LOGI("DEBUG", "Y Offset:   %d, Size: %d", layout.y_offset, layout.y_size);
-    ESP_LOGI("DEBUG", "Block Size: %d", layout.block_size);
-    ESP_LOGI("DEBUG", "Nibble Packed: %s", layout.nibble_packed ? "YES" : "NO");
+    ESP_LOGI(TAG, "Layout Init - X Size: %d, Block: %d", layout.x_size, layout.block_size);
 
     if (tp_read_task_handle == NULL) {
         tp_read_task_handle = xTaskGetCurrentTaskHandle();
@@ -155,13 +173,17 @@ void elan_i2c_task(void *arg) {
 
     while (1) {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
         int retry_count = 0;
-        while (gpio_get_level(INT_IO) == 0 && retry_count < 5) {
-            esp_err_t err = i2c_master_receive(dev_handle, rx_buf, sizeof(rx_buf), pdMS_TO_TICKS(5));
+        while (gpio_get_level(INT_IO) == 0 && retry_count < 10) {
+            esp_err_t err = i2c_master_receive(dev_handle, rx_buf, sizeof(rx_buf), pdMS_TO_TICKS(10));
             
             if (err == ESP_OK) {
-                parse_ptp_data(rx_buf, &msg);
-                xQueueSend(tp_queue, &msg, 0);
+                parse_ptp_data(rx_buf, sizeof(rx_buf), layout, &msg);
+                
+                if (tp_queue != NULL) {
+                    xQueueSend(tp_queue, &msg, 0);
+                }
             } else {
                 break;
             }

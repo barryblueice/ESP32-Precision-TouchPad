@@ -13,6 +13,7 @@ typedef struct {
         uint8_t  contact_id;
     } fingers[5];
     uint8_t actual_count;
+    uint8_t button_mask;
 } tp_multi_msg_t;
 
 extern QueueHandle_t tp_queue;

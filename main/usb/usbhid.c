@@ -76,7 +76,7 @@ uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id, hid_report_t
             return 1;
         }
         if (report_id == REPORTID_MAX_COUNT) {
-            buffer[0] = 0x05; 
+            buffer[0] = 0x15; 
             return 1;
         }
         if (report_id == REPORTID_PTPHQA) {
@@ -125,46 +125,54 @@ typedef struct __attribute__((packed)) {
     uint8_t buttons;       // 1 byte
 } ptp_report_t;
 
-static uint16_t last_stable_x = 0;
-static uint16_t last_stable_y = 0;
-
 static const float scale_x = 4095.0f / 3679.0f;
 static const float scale_y = 4095.0f / 2261.0f;
 
-static bool was_touching = false;
-
 void usbhid_task(void *arg) {
     tp_multi_msg_t msg;
+    static uint16_t last_valid_x = 0;
+    static uint16_t last_valid_y = 0;
+    
+    const uint16_t LOGICAL_MAX_X = 4095;
+    const uint16_t LOGICAL_MAX_Y = 4095;
+
     while (1) {
         if (xQueueReceive(tp_queue, &msg, portMAX_DELAY)) {
             ptp_report_t report = {0};
             uint64_t now = esp_timer_get_time();
             report.scan_time = (uint16_t)((now / 100) & 0xFFFF);
 
+            report.buttons = (msg.button_mask > 0) ? 0x01 : 0x00;
+
             if (msg.actual_count > 0) {
-                uint16_t current_x = (uint16_t)(msg.fingers[0].x * scale_x);
-                uint16_t current_y = (uint16_t)(msg.fingers[0].y * scale_y);
+                float raw_scaled_x = msg.fingers[0].x * scale_x;
+                float raw_scaled_y = msg.fingers[0].y * scale_y;
 
-                int dx = abs((int)current_x - (int)last_stable_x);
-                int dy = abs((int)current_y - (int)last_stable_y);
-                
-                if (!was_touching || dx > 8 || dy > 8) {
-                    last_stable_x = current_x;
-                    last_stable_y = current_y;
-                }
+                uint16_t current_x = (raw_scaled_x > LOGICAL_MAX_X) ? LOGICAL_MAX_X : (uint16_t)raw_scaled_x;
+                uint16_t current_y = (raw_scaled_y > LOGICAL_MAX_Y) ? LOGICAL_MAX_Y : (uint16_t)raw_scaled_y;
 
-                report.fingers[0].x = last_stable_x;
-                report.fingers[0].y = last_stable_y;
-                report.fingers[0].tip_conf_id = 0x03;
+                last_valid_x = current_x;
+                last_valid_y = current_y;
+
+                report.fingers[0].tip_conf_id = 0x03 | ((msg.fingers[0].contact_id & 0x03) << 2);
+                report.fingers[0].x = current_x;
+                report.fingers[0].y = current_y;
                 report.contact_count = 1;
-                was_touching = true;
             } else {
-                report.fingers[0].x = last_stable_x;
-                report.fingers[0].y = last_stable_y;
-                report.fingers[0].tip_conf_id = 0x02;
-                report.contact_count = 0;
-                was_touching = false;
+                report.fingers[0].x = last_valid_x;
+                report.fingers[0].y = last_valid_y;
+
+                if (report.buttons & 0x01) {
+                    report.fingers[0].tip_conf_id = 0x03 | ((msg.fingers[0].contact_id & 0x03) << 2);
+                    report.contact_count = 1;
+                } else {
+                    report.fingers[0].tip_conf_id = 0x02;
+                    report.contact_count = 0;
+                }
             }
+
+            ESP_LOGI(TAG, "TP Report - X:%d Y:%d Btn:%02X Count:%d", 
+                     report.fingers[0].x, report.fingers[0].y, report.buttons, report.contact_count);
 
             tud_hid_report(REPORTID_TOUCHPAD, &report, sizeof(report));
         }
