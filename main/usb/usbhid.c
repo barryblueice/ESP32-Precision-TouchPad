@@ -16,7 +16,6 @@
 
 #include "usb/usbhid.h"
 
-#define MY_REPORT_ID      0x01
 #define TPD_REPORT_SIZE   6
 
 static const char *TAG = "USB_HID_TP";
@@ -139,32 +138,33 @@ void usbhid_task(void *arg) {
             ptp_report_t report = {0};
             
             report.scan_time = (uint16_t)((esp_timer_get_time() / 100) & 0xFFFF);
+            
             for (int i = 0; i < 5; i++) {
-                uint16_t tx = (uint16_t)(msg.fingers[i].x * scale_x);
-                uint16_t ty = (uint16_t)(msg.fingers[i].y * scale_y);
-
                 if (msg.fingers[i].tip_switch) {
+                    uint16_t tx = (uint16_t)(msg.fingers[i].x * scale_x);
+                    uint16_t ty = (uint16_t)(msg.fingers[i].y * scale_y);
+
                     report.fingers[i].tip_conf_id = PTP_CONFIDENCE_BIT | PTP_TIP_SWITCH_BIT | (i << 2);
                     report.fingers[i].x = tx;
                     report.fingers[i].y = ty;
                 } else {
-                    report.fingers[i].tip_conf_id = PTP_CONFIDENCE_BIT | (i << 2);
-                    report.fingers[i].x = tx;
-                    report.fingers[i].y = ty;
+                    report.fingers[i].tip_conf_id = (i << 2); 
+                    report.fingers[i].x = 0;
+                    report.fingers[i].y = 0;
                 }
             }
 
             report.contact_count = msg.actual_count;
-            if (msg.button_mask > 0x00) {
-                report.buttons = 0x01;
+
+            if (msg.button_mask > 0) {
+                report.buttons = 0x01; 
             } else {
                 report.buttons = 0x00;
             }
 
-            ESP_LOGI(TAG, "TP Report: X=%d Y=%d Count=%d BTN=%d", 
-                     report.fingers[0].x, report.fingers[0].y, 
-                     report.contact_count, report.buttons);
-
+            // ESP_LOGI(TAG, "TP Report: X=%d Y=%d Count=%d BTN=%d", 
+            //          report.fingers[0].x, report.fingers[0].y, 
+            //          report.contact_count, report.buttons);
             if (tud_hid_ready()) {
                 tud_hid_report(REPORTID_TOUCHPAD, &report, sizeof(report));
             }

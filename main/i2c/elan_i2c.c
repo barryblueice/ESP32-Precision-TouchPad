@@ -47,35 +47,6 @@ typedef struct {
     bool nibble_packed;
 } finger_layout_t;
 
-static finger_layout_t parse_finger_layout(const uint8_t *desc, int len)
-{
-    finger_layout_t layout = {0};
-
-    for (int i = 0; i < len-1; i++) {
-        if (desc[i] == 0x09 && desc[i+1] == 0x30) {
-            layout.nibble_packed = true;
-            layout.tip_offset = 0;
-            layout.id_offset = 1;
-            layout.x_offset = 2;
-            layout.y_offset = 4;
-            layout.block_size = 5;
-            layout.x_size = 12;
-            layout.y_size = 12;
-            return layout;
-        }
-    }
-
-    layout.nibble_packed = false;
-    layout.tip_offset = 0;
-    layout.id_offset = 1;
-    layout.x_offset = 2;
-    layout.y_offset = 4;
-    layout.block_size = 6;
-    layout.x_size = 16;
-    layout.y_size = 16;
-    return layout;
-}
-
 static void elan_i2c_init(void) {
     gpio_set_direction(RST_IO, GPIO_MODE_OUTPUT);
     gpio_set_level(RST_IO, 0);
@@ -112,8 +83,7 @@ static void elan_i2c_init(void) {
 }
 
 // PTP 数据解析 (Tip/ID/XY)
-static void parse_ptp_report(uint8_t *data, int len, finger_layout_t layout, tp_multi_msg_t *msg_out) 
-{
+static void parse_ptp_report(uint8_t *data, int len, finger_layout_t layout, tp_multi_msg_t *msg_out)  {
     uint8_t report_id = data[2];
     if (report_id != 0x04) return;
 
@@ -155,70 +125,67 @@ static void parse_ptp_report(uint8_t *data, int len, finger_layout_t layout, tp_
     msg_out->actual_count = count;
 }
 
-void elan_i2c_task(void *arg)
-{
+void elan_i2c_task(void *arg) {
     elan_i2c_init();
-    
-    static uint16_t slot_x[5] = {0};
-    static uint16_t slot_y[5] = {0};
-    static bool slot_active[5] = {0};
-    
-    static uint8_t locked_button = 0;
-    static bool is_detecting_click = false;
-    
     tp_multi_msg_t msg_result;
+    uint8_t locked_button = 0;
+    memset(&msg_result, 0, sizeof(tp_multi_msg_t));
+
+    // 记录每个 ID 最后一次更新的时间（用于超时强制释放）
+    uint32_t last_update_ms[5] = {0};
 
     while (1) {
-        bool has_new_data = false;
+        bool has_new_packet = false;
 
+        // 1. 读取当前中断周期内的所有包
         while (gpio_get_level(INT_IO) == 0) {
             uint8_t data[64];
             if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(5)) == ESP_OK) {
                 if (data[2] == 0x04) { 
                     uint8_t status = data[3];
                     uint8_t contact_id = (status & 0xF0) >> 4;
-                    bool tip = (status & 0x01);
                     uint16_t raw_x = data[4] | (data[5] << 8);
                     uint16_t raw_y = data[6] | (data[7] << 8);
+                    bool tip = (status & 0x01);
 
                     if (contact_id < 5) {
-                        slot_active[contact_id] = tip;
-                        slot_x[contact_id] = raw_x;
-                        slot_y[contact_id] = raw_y;
-                        has_new_data = true;
+                        msg_result.fingers[contact_id].tip_switch = tip ? 1 : 0;
+                        msg_result.fingers[contact_id].x = raw_x;
+                        msg_result.fingers[contact_id].y = raw_y;
+                        msg_result.fingers[contact_id].contact_id = contact_id;
+                        
+                        last_update_ms[contact_id] = xTaskGetTickCount() * portTICK_PERIOD_MS;
+                        has_new_packet = true;
                     }
-
-                    bool physical_pressed = (data[11] == 0x81); 
                     
-                    if (physical_pressed) {
-                        if (!is_detecting_click) {
-                            is_detecting_click = true;
-                            locked_button = (raw_x > 1700) ? 0x02 : 0x01;
-                        }
-                        msg_result.button_mask = locked_button;
+                    if (data[11] == 0x81) {
+                        locked_button = (raw_x > 1800) ? 0x02 : 0x01;
+                        msg_result.button_mask = 0x01;
                     } else {
-                        is_detecting_click = false;
-                        locked_button = 0;
                         msg_result.button_mask = 0;
                     }
                 }
             }
         }
 
-        if (has_new_data) {
-            uint8_t current_count = 0;
-            for (int i = 0; i < 5; i++) {
-                msg_result.fingers[i].contact_id = i;
-                msg_result.fingers[i].tip_switch = slot_active[i] ? 1 : 0;
-                msg_result.fingers[i].x = slot_x[i];
-                msg_result.fingers[i].y = slot_y[i];
-                if (slot_active[i]) current_count++;
+        uint32_t now = xTaskGetTickCount() * portTICK_PERIOD_MS;
+        for (int i = 0; i < 5; i++) {
+            if (msg_result.fingers[i].tip_switch && (now - last_update_ms[i] > 100)) {
+                msg_result.fingers[i].tip_switch = 0;
+                has_new_packet = true;
             }
-            msg_result.actual_count = current_count;
-            
+        }
+
+        if (has_new_packet) {
+            uint8_t count = 0;
+            for (int i = 0; i < 5; i++) {
+                if (msg_result.fingers[i].tip_switch) count++;
+            }
+            msg_result.actual_count = count;
             xQueueSend(tp_queue, &msg_result, 0);
         }
 
         vTaskDelay(pdMS_TO_TICKS(1)); 
     }
 }
+
