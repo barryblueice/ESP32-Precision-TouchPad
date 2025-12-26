@@ -18,7 +18,7 @@ https://github.com/user-attachments/assets/b2fd1d32-9a8d-46fc-8a0d-ce17007ca7c2
   - [x] PCB Design
   - [x] Material Selection
   - [ ] Appearance Design (Modeling by using SOLIDWORKS)
-  - [ ] Adding battery to support Bluetooth (Fingerprint module is unavailable during this state)
+  - [ ] Adding battery to support Bluetooth (Fingerprint module is unavailable during bluetooth wireless state)
 
   ## Software:
   - [x] Recognized as a Microsoft Percision TouchPad
@@ -27,3 +27,4 @@ https://github.com/user-attachments/assets/b2fd1d32-9a8d-46fc-8a0d-ce17007ca7c2
   - [x] Single Touch Support
   - [ ] Multi Touch Support
   - [ ] Change from Freertos polling to GPIO interrupt
+
