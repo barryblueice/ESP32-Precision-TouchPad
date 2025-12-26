@@ -1,4 +1,4 @@
-[英文](https://github.com/barryblueice/ESP32-Precision-TouchPad/main/README.md) | [简体中文](https://github.com/barryblueice/ESP32-Precision-TouchPad/main/README_CN.md)
+[英文](https://github.com/barryblueice/ESP32-Precision-TouchPad/blob/main/README.md) | [简体中文](https://github.com/barryblueice/ESP32-Precision-TouchPad/blob/main/README_CN.md)
 
 # **这是什么？**
 
@@ -30,3 +30,4 @@ https://github.com/user-attachments/assets/b2fd1d32-9a8d-46fc-8a0d-ce17007ca7c2
   - [ ] 多指触摸支持
   - [x] 物理按键支持（左键 & 右键）
   - [x] 由freertos轮询切换到GPIO Int中断触发
+
