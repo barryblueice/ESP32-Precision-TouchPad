@@ -154,36 +154,49 @@ static finger_layout_t parse_finger_layout(const uint8_t *desc, int len) {
     return layout;
 }
 
-// static void parse_ptp_report(uint8_t *data, int len, finger_layout_t layout) {
-//     uint16_t total_len = data[0] | (data[1]<<8);
+// static void parse_ptp_report(uint8_t *data, int len, finger_layout_t layout, tp_multi_msg_t *msg_out) 
+// {
 //     uint8_t report_id = data[2];
-//     if (report_id != 0x04 || total_len < 3) return;
+//     if (report_id != 0x04) return;
 
-//     uint8_t *p = data + 3;
-//     int finger_count = (total_len - 3) / layout.block_size;
+//     static bool is_detecting_click = false; 
+//     static uint8_t locked_button = 0;
 
-//     for (int i = 0; i < finger_count; i++) {
-//         bool tip = p[layout.tip_offset] & 0x01;
-//         uint8_t fid = p[layout.id_offset];
-//         uint16_t x=0, y=0;
+//     memset(msg_out, 0, sizeof(tp_multi_msg_t));
 
-//         if (layout.nibble_packed) {
-//             uint8_t b4 = p[layout.x_offset];
-//             uint8_t b5 = p[layout.x_offset+1];
-//             uint8_t b6 = p[layout.y_offset];
-//             x = (b4 << 4) | ((b5 & 0xF0)>>4);
-//             y = (b6 << 4) | (b5 & 0x0F);
-//         } else {
-//             x = p[layout.x_offset] | (p[layout.x_offset+1]<<8);
-//             y = p[layout.y_offset] | (p[layout.y_offset+1]<<8);
+//     uint16_t raw_x = data[4] | (data[5] << 8);
+//     uint16_t raw_y = data[6] | (data[7] << 8);
+//     bool physical_pressed = (data[11] == 0x81);
+//     uint8_t status = data[3];
+//     bool tip = (status & 0x01);
+//     if (physical_pressed) {
+//         if (!is_detecting_click) {
+//             is_detecting_click = true;
+//             if (raw_x > 1700) {
+//                 locked_button = 0x02;
+//             } else if (raw_x > 0) {
+//                 locked_button = 0x01;
+//             } else {
+//                 is_detecting_click = false; 
+//             }
 //         }
+//         msg_out->button_mask = locked_button;
+//     } else {
+        
+//         is_detecting_click = false;
+//         locked_button = 0;
+//         msg_out->button_mask = 0;
+//     }
 
-//         if (tip)
-//             printf("PTP TOUCH [ID:%d] X=%d Y=%d\n", fid, x, y);
-//         else
-//             printf("PTP RELEASE [ID:%d]\n", fid);
+//     if (tip) {
+//         msg_out->actual_count = 1;
+//         msg_out->fingers[0].tip_switch = 1;
+//         msg_out->fingers[0].x = raw_x;
+//         msg_out->fingers[0].y = raw_y;
+//     }
 
-//         p += layout.block_size;
+//     if (physical_pressed) {
+//         printf("[CLICK] BTN:%d | X:%d | Raw11:%02X\n", msg_out->button_mask, raw_x, data[11]);
 //     }
 // }
 
@@ -192,44 +205,58 @@ static void parse_ptp_report(uint8_t *data, int len, finger_layout_t layout, tp_
     uint8_t report_id = data[2];
     if (report_id != 0x04) return;
 
-    static bool is_detecting_click = false; 
-    static uint8_t locked_button = 0;
+    static struct {
+        uint16_t x;
+        uint16_t y;
+        bool active;
+    } finger_slots[5] = {0};
 
-    memset(msg_out, 0, sizeof(tp_multi_msg_t));
-
+    uint8_t status = data[3];
+    uint8_t contact_id = (status & 0xF0) >> 4;
+    bool tip = (status & 0x01);
     uint16_t raw_x = data[4] | (data[5] << 8);
     uint16_t raw_y = data[6] | (data[7] << 8);
     bool physical_pressed = (data[11] == 0x81);
-    uint8_t status = data[3];
-    bool tip = (status & 0x01);
-    if (physical_pressed) {
-        if (!is_detecting_click) {
-            is_detecting_click = true;
-            if (raw_x > 1700) {
-                locked_button = 0x02;
-            } else if (raw_x > 0) {
-                locked_button = 0x01;
-            } else {
-                is_detecting_click = false; 
-            }
+
+    if (contact_id < 5) {
+        finger_slots[contact_id].x = raw_x;
+        finger_slots[contact_id].y = raw_y;
+        finger_slots[contact_id].active = tip;
+    }
+
+    memset(msg_out, 0, sizeof(tp_multi_msg_t));
+    uint8_t current_active_count = 0;
+    
+    for (int i = 0; i < 5; i++) {
+        if (finger_slots[i].active) {
+            msg_out->fingers[current_active_count].x = finger_slots[i].x;
+            msg_out->fingers[current_active_count].y = finger_slots[i].y;
+            msg_out->fingers[current_active_count].contact_id = i;
+            msg_out->fingers[current_active_count].tip_switch = 1;
+            current_active_count++;
         }
-        msg_out->button_mask = locked_button;
+    }
+    msg_out->actual_count = current_active_count;
+    
+    static uint8_t last_button = 0;
+    if (physical_pressed) {
+        if (last_button == 0) {
+            msg_out->button_mask = (raw_x > 1700) ? 0x02 : 0x01;
+            last_button = msg_out->button_mask;
+        } else {
+            msg_out->button_mask = last_button;
+        }
     } else {
-        
-        is_detecting_click = false;
-        locked_button = 0;
+        last_button = 0;
         msg_out->button_mask = 0;
     }
 
-    if (tip) {
-        msg_out->actual_count = 1;
-        msg_out->fingers[0].tip_switch = 1;
-        msg_out->fingers[0].x = raw_x;
-        msg_out->fingers[0].y = raw_y;
-    }
-
-    if (physical_pressed) {
-        printf("[CLICK] BTN:%d | X:%d | Raw11:%02X\n", msg_out->button_mask, raw_x, data[11]);
+    if (msg_out->actual_count > 0 || msg_out->button_mask > 0) {
+        printf("[Multi-ID] Count:%d | BTN:%d | ", msg_out->actual_count, msg_out->button_mask);
+        for(int i=0; i < msg_out->actual_count; i++) {
+            printf("F%d:[%d,%d] ", msg_out->fingers[i].contact_id, msg_out->fingers[i].x, msg_out->fingers[i].y);
+        }
+        printf("\n");
     }
 }
 

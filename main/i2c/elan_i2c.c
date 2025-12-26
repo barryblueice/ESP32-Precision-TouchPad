@@ -5,6 +5,7 @@
 #include "driver/i2c_master.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 
 #include "i2c/elan_i2c.h"
 
@@ -111,31 +112,25 @@ static void elan_i2c_init(void) {
 }
 
 // PTP 数据解析 (Tip/ID/XY)
-static void parse_ptp_data(uint8_t *data, int len, finger_layout_t layout, tp_multi_msg_t *msg_out) 
+static void parse_ptp_report(uint8_t *data, int len, finger_layout_t layout, tp_multi_msg_t *msg_out) 
 {
     uint8_t report_id = data[2];
     if (report_id != 0x04) return;
 
-    static bool is_detecting_click = false; 
-    static uint8_t locked_button = 0;
-
-    memset(msg_out, 0, sizeof(tp_multi_msg_t));
-
+    uint8_t status = data[3];
+    uint8_t contact_id = (status & 0xF0) >> 4;
+    bool tip = (status & 0x01);
     uint16_t raw_x = data[4] | (data[5] << 8);
     uint16_t raw_y = data[6] | (data[7] << 8);
     
     bool physical_pressed = (data[11] == 0x81);
-    uint8_t status = data[3];
-    bool tip = (status & 0x01);
+    static uint8_t locked_button = 0;
+    static bool is_detecting_click = false;
 
     if (physical_pressed) {
         if (!is_detecting_click) {
             is_detecting_click = true;
-            if (raw_x > 1700) {
-                locked_button = 0x02;
-            } else {
-                locked_button = 0x01;
-            }
+            locked_button = (raw_x > 1700) ? 0x02 : 0x01;
         }
         msg_out->button_mask = locked_button;
     } else {
@@ -144,16 +139,20 @@ static void parse_ptp_data(uint8_t *data, int len, finger_layout_t layout, tp_mu
         msg_out->button_mask = 0;
     }
 
-    if (tip) {
-        msg_out->actual_count = 1;
-        msg_out->fingers[0].tip_switch = 1;
-        msg_out->fingers[0].x = raw_x;
-        msg_out->fingers[0].y = raw_y;
+    if (contact_id < 5) {
+        msg_out->fingers[contact_id].x = raw_x;
+        msg_out->fingers[contact_id].y = raw_y;
+        msg_out->fingers[contact_id].tip_switch = tip ? 1 : 0;
+        msg_out->fingers[contact_id].contact_id = contact_id;
     }
-
-    if (physical_pressed) {
-        ESP_LOGD(TAG, "[CLICK] BTN:%d | X:%d | Raw11:%02X", msg_out->button_mask, raw_x, data[11]);
+    
+    uint8_t count = 0;
+    for (int i = 0; i < 5; i++) {
+        if (msg_out->fingers[i].tip_switch) {
+            count++;
+        }
     }
+    msg_out->actual_count = count;
 }
 
 void elan_i2c_task(void *arg) {
@@ -168,26 +167,51 @@ void elan_i2c_task(void *arg) {
         tp_read_task_handle = xTaskGetCurrentTaskHandle();
     }
 
-    uint8_t rx_buf[64];
-    tp_multi_msg_t msg;
+    tp_multi_msg_t msg_result;
+    memset(&msg_result, 0, sizeof(msg_result));
+    
+    uint8_t last_id = 0xFF;
+    int64_t last_packet_time = 0;
 
-    while (1) {
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    while(1) {
+        bool has_data = (gpio_get_level(INT_IO) == 0);
+        int64_t now = esp_timer_get_time();
 
-        int retry_count = 0;
-        while (gpio_get_level(INT_IO) == 0 && retry_count < 10) {
-            esp_err_t err = i2c_master_receive(dev_handle, rx_buf, sizeof(rx_buf), pdMS_TO_TICKS(10));
-            
-            if (err == ESP_OK) {
-                parse_ptp_data(rx_buf, sizeof(rx_buf), layout, &msg);
-                
-                if (tp_queue != NULL) {
-                    xQueueSend(tp_queue, &msg, 0);
+        if (has_data) {
+            uint8_t data[64];
+            if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(5)) == ESP_OK) {
+                uint8_t status = data[3];
+                uint8_t contact_id = (status & 0xF0) >> 4;
+                bool tip = (status & 0x01);
+
+                if ((contact_id <= last_id && last_id != 0xFF) || (now - last_packet_time > 8000)) {
+                    xQueueSend(tp_queue, &msg_result, 0);
+                    msg_result.actual_count = 0;
+                    for(int i=0; i<5; i++) msg_result.fingers[i].tip_switch = 0;
                 }
-            } else {
-                break;
+
+                if (contact_id < 5) {
+                    msg_result.fingers[contact_id].x = data[4] | (data[5] << 8);
+                    msg_result.fingers[contact_id].y = data[6] | (data[7] << 8);
+                    msg_result.fingers[contact_id].tip_switch = tip ? 1 : 0;
+                    msg_result.fingers[contact_id].contact_id = contact_id;
+                }
+
+                msg_result.button_mask = (data[11] == 0x81) ? ( (msg_result.fingers[0].x > 1700) ? 0x02 : 0x01 ) : 0;
+
+                uint8_t active = 0;
+                for(int i=0; i<5; i++) if(msg_result.fingers[i].tip_switch) active++;
+                msg_result.actual_count = active;
+
+                last_id = contact_id;
+                last_packet_time = now;
             }
-            retry_count++;
+        } else {
+            if (last_id != 0xFF && (now - last_packet_time > 10000)) {
+                xQueueSend(tp_queue, &msg_result, 0);
+                last_id = 0xFF;
+            }
         }
+        vTaskDelay(pdMS_TO_TICKS(1));
     }
 }

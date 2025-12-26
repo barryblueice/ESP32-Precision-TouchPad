@@ -130,8 +130,8 @@ static const float scale_y = 4095.0f / 2261.0f;
 
 void usbhid_task(void *arg) {
     tp_multi_msg_t msg;
-    static uint16_t last_valid_x = 0;
-    static uint16_t last_valid_y = 0;
+    static uint16_t last_valid_x[5] = {0};
+    static uint16_t last_valid_y[5] = {0};
     
     const uint16_t LOGICAL_MAX_X = 4095;
     const uint16_t LOGICAL_MAX_Y = 4095;
@@ -144,35 +144,35 @@ void usbhid_task(void *arg) {
 
             report.buttons = (msg.button_mask > 0) ? 0x01 : 0x00;
 
-            if (msg.actual_count > 0) {
-                float raw_scaled_x = msg.fingers[0].x * scale_x;
-                float raw_scaled_y = msg.fingers[0].y * scale_y;
+            for (int i = 0; i < 5; i++) {
+                if (msg.fingers[i].tip_switch) {
+                    float sx = msg.fingers[i].x * scale_x;
+                    float sy = msg.fingers[i].y * scale_y;
 
-                uint16_t current_x = (raw_scaled_x > LOGICAL_MAX_X) ? LOGICAL_MAX_X : (uint16_t)raw_scaled_x;
-                uint16_t current_y = (raw_scaled_y > LOGICAL_MAX_Y) ? LOGICAL_MAX_Y : (uint16_t)raw_scaled_y;
+                    uint16_t cur_x = (sx > LOGICAL_MAX_X) ? LOGICAL_MAX_X : (uint16_t)sx;
+                    uint16_t cur_y = (sy > LOGICAL_MAX_Y) ? LOGICAL_MAX_Y : (uint16_t)sy;
 
-                last_valid_x = current_x;
-                last_valid_y = current_y;
+                    last_valid_x[i] = cur_x;
+                    last_valid_y[i] = cur_y;
 
-                report.fingers[0].tip_conf_id = 0x03 | ((msg.fingers[0].contact_id & 0x03) << 2);
-                report.fingers[0].x = current_x;
-                report.fingers[0].y = current_y;
-                report.contact_count = 1;
-            } else {
-                report.fingers[0].x = last_valid_x;
-                report.fingers[0].y = last_valid_y;
-
-                if (report.buttons & 0x01) {
-                    report.fingers[0].tip_conf_id = 0x03 | ((msg.fingers[0].contact_id & 0x03) << 2);
-                    report.contact_count = 1;
+                    report.fingers[i].tip_conf_id = 0x03 | (msg.fingers[i].contact_id << 2);
+                    report.fingers[i].x = cur_x;
+                    report.fingers[i].y = cur_y;
                 } else {
-                    report.fingers[0].tip_conf_id = 0x02;
-                    report.contact_count = 0;
+                    report.fingers[i].tip_conf_id = (i << 2) | 0x00;
+                    report.fingers[i].x = last_valid_x[i];
+                    report.fingers[i].y = last_valid_y[i];
                 }
             }
 
-            // ESP_LOGI(TAG, "TP Report - X:%d Y:%d Btn:%02X Count:%d", 
-            //          report.fingers[0].x, report.fingers[0].y, report.buttons, report.contact_count);
+            report.contact_count = msg.actual_count;
+
+            if (report.buttons > 0 && report.contact_count == 0) {
+                report.fingers[0].tip_conf_id = 0x03;
+                report.fingers[0].x = last_valid_x[0];
+                report.fingers[0].y = last_valid_y[0];
+                report.contact_count = 1;
+            }
 
             tud_hid_report(REPORTID_TOUCHPAD, &report, sizeof(report));
         }
