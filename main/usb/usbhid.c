@@ -171,8 +171,8 @@ void usbhid_task(void *arg) {
                 }
             }
 
-            ESP_LOGI(TAG, "TP Report - X:%d Y:%d Btn:%02X Count:%d", 
-                     report.fingers[0].x, report.fingers[0].y, report.buttons, report.contact_count);
+            // ESP_LOGI(TAG, "TP Report - X:%d Y:%d Btn:%02X Count:%d", 
+            //          report.fingers[0].x, report.fingers[0].y, report.buttons, report.contact_count);
 
             tud_hid_report(REPORTID_TOUCHPAD, &report, sizeof(report));
         }
