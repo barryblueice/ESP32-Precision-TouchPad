@@ -35,8 +35,18 @@ typedef struct {
     uint16_t max_y;
 } tp_max_xy_t;
 
-static tp_max_xy_t elan_parse_max_xy(const uint8_t *desc, int len)
-{
+typedef struct {
+    struct {
+        uint16_t x;
+        uint16_t y;
+        uint8_t  tip_switch;
+        uint8_t  contact_id;
+    } fingers[5];
+    uint8_t actual_count;
+    uint8_t button_mask; // 物理按键状态
+} tp_multi_msg_t;
+
+static tp_max_xy_t elan_parse_max_xy(const uint8_t *desc, int len) {
     tp_max_xy_t max_val = {0,0};
 
     for (int i = 0; i < len-1; i++) {
@@ -67,8 +77,7 @@ static tp_max_xy_t elan_parse_max_xy(const uint8_t *desc, int len)
 }
 
 
-static void hex_dump(const uint8_t *buf, int len)
-{
+static void hex_dump(const uint8_t *buf, int len) {
     for (int i = 0; i < len; i++) {
         printf("%02X ", buf[i]);
         if ((i & 0x0F) == 0x0F) printf("\n");
@@ -117,8 +126,7 @@ static bool elan_read_descriptors() {
     return true;
 }
 
-static finger_layout_t parse_finger_layout(const uint8_t *desc, int len)
-{
+static finger_layout_t parse_finger_layout(const uint8_t *desc, int len) {
     finger_layout_t layout = {0};
 
     for (int i = 0; i < len-1; i++) {
@@ -146,37 +154,82 @@ static finger_layout_t parse_finger_layout(const uint8_t *desc, int len)
     return layout;
 }
 
-static void parse_ptp_report(uint8_t *data, int len, finger_layout_t layout)
+// static void parse_ptp_report(uint8_t *data, int len, finger_layout_t layout) {
+//     uint16_t total_len = data[0] | (data[1]<<8);
+//     uint8_t report_id = data[2];
+//     if (report_id != 0x04 || total_len < 3) return;
+
+//     uint8_t *p = data + 3;
+//     int finger_count = (total_len - 3) / layout.block_size;
+
+//     for (int i = 0; i < finger_count; i++) {
+//         bool tip = p[layout.tip_offset] & 0x01;
+//         uint8_t fid = p[layout.id_offset];
+//         uint16_t x=0, y=0;
+
+//         if (layout.nibble_packed) {
+//             uint8_t b4 = p[layout.x_offset];
+//             uint8_t b5 = p[layout.x_offset+1];
+//             uint8_t b6 = p[layout.y_offset];
+//             x = (b4 << 4) | ((b5 & 0xF0)>>4);
+//             y = (b6 << 4) | (b5 & 0x0F);
+//         } else {
+//             x = p[layout.x_offset] | (p[layout.x_offset+1]<<8);
+//             y = p[layout.y_offset] | (p[layout.y_offset+1]<<8);
+//         }
+
+//         if (tip)
+//             printf("PTP TOUCH [ID:%d] X=%d Y=%d\n", fid, x, y);
+//         else
+//             printf("PTP RELEASE [ID:%d]\n", fid);
+
+//         p += layout.block_size;
+//     }
+// }
+
+static void parse_ptp_report(uint8_t *data, int len, finger_layout_t layout, tp_multi_msg_t *msg_out) 
 {
-    uint16_t total_len = data[0] | (data[1]<<8);
     uint8_t report_id = data[2];
-    if (report_id != 0x04 || total_len < 3) return;
+    if (report_id != 0x04) return;
 
-    uint8_t *p = data + 3;
-    int finger_count = (total_len - 3) / layout.block_size;
+    static bool is_detecting_click = false; 
+    static uint8_t locked_button = 0;
 
-    for (int i = 0; i < finger_count; i++) {
-        bool tip = p[layout.tip_offset] & 0x01;
-        uint8_t fid = p[layout.id_offset];
-        uint16_t x=0, y=0;
+    memset(msg_out, 0, sizeof(tp_multi_msg_t));
 
-        if (layout.nibble_packed) {
-            uint8_t b4 = p[layout.x_offset];
-            uint8_t b5 = p[layout.x_offset+1];
-            uint8_t b6 = p[layout.y_offset];
-            x = (b4 << 4) | ((b5 & 0xF0)>>4);
-            y = (b6 << 4) | (b5 & 0x0F);
-        } else {
-            x = p[layout.x_offset] | (p[layout.x_offset+1]<<8);
-            y = p[layout.y_offset] | (p[layout.y_offset+1]<<8);
+    uint16_t raw_x = data[4] | (data[5] << 8);
+    uint16_t raw_y = data[6] | (data[7] << 8);
+    bool physical_pressed = (data[11] == 0x81);
+    uint8_t status = data[3];
+    bool tip = (status & 0x01);
+    if (physical_pressed) {
+        if (!is_detecting_click) {
+            is_detecting_click = true;
+            if (raw_x > 1700) {
+                locked_button = 0x02;
+            } else if (raw_x > 0) {
+                locked_button = 0x01;
+            } else {
+                is_detecting_click = false; 
+            }
         }
+        msg_out->button_mask = locked_button;
+    } else {
+        
+        is_detecting_click = false;
+        locked_button = 0;
+        msg_out->button_mask = 0;
+    }
 
-        if (tip)
-            printf("PTP TOUCH [ID:%d] X=%d Y=%d\n", fid, x, y);
-        else
-            printf("PTP RELEASE [ID:%d]\n", fid);
+    if (tip) {
+        msg_out->actual_count = 1;
+        msg_out->fingers[0].tip_switch = 1;
+        msg_out->fingers[0].x = raw_x;
+        msg_out->fingers[0].y = raw_y;
+    }
 
-        p += layout.block_size;
+    if (physical_pressed) {
+        printf("[CLICK] BTN:%d | X:%d | Raw11:%02X\n", msg_out->button_mask, raw_x, data[11]);
     }
 }
 
@@ -225,7 +278,7 @@ void elan_i2c_task(void *arg) {
     i2c_device_config_t dev_cfg = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
         .device_address = I2C_ADDR,
-        .scl_speed_hz = 100000,
+        .scl_speed_hz = 400000,
     };
     ESP_ERROR_CHECK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
 
@@ -233,18 +286,18 @@ void elan_i2c_task(void *arg) {
     gpio_set_pull_mode(INT_IO, GPIO_PULLUP_ONLY);
 
     elan_init_sequence();
-
     finger_layout_t layout = parse_finger_layout(report_desc, report_desc_len);
-
+    
+    tp_multi_msg_t msg_result;
     uint8_t data[64];
+
     while(1) {
         if (gpio_get_level(INT_IO) == 0) {
-            esp_err_t ret = i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(10));
-            if (ret == ESP_OK) {
-                parse_ptp_report(data, sizeof(data), layout);
+            if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(10)) == ESP_OK) {
+                parse_ptp_report(data, sizeof(data), layout, &msg_result);
             }
         }
-        vTaskDelay(pdMS_TO_TICKS(2));
+        vTaskDelay(pdMS_TO_TICKS(1));
     }
 }
 
