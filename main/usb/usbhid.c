@@ -136,7 +136,7 @@ void usbhid_task(void *arg) {
     while (1) {
         if (xQueueReceive(tp_queue, &msg, portMAX_DELAY)) {
             ptp_report_t report = {0};
-            
+
             report.scan_time = (uint16_t)((esp_timer_get_time() / 100) & 0xFFFF);
             
             for (int i = 0; i < 5; i++) {
