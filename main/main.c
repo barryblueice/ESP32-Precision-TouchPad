@@ -7,16 +7,16 @@
 #include "i2c/elan_i2c.h"
 
 void app_main(void) {
-
     tp_queue = xQueueCreate(5, sizeof(tp_multi_msg_t));
 
     usbhid_init();
 
     xTaskCreate(elan_i2c_task, "elan_i2c", 4096, NULL, 10, NULL);
-    xTaskCreate(usbhid_task, "hid", 4096, NULL, 5, NULL);
+    
+    xTaskCreate(usbhid_task, "hid", 4096, NULL, 11, NULL);
 
     while (1) {
-        tud_task();
-        vTaskDelay(1);
+        tud_task(); 
+        vTaskDelay(pdMS_TO_TICKS(1)); 
     }
 }
