@@ -127,17 +127,17 @@ static void parse_ptp_report(uint8_t *data, int len, finger_layout_t layout, tp_
 
 void elan_i2c_task(void *arg) {
     elan_i2c_init();
+    
     tp_multi_msg_t msg_result;
-    uint8_t locked_button = 0;
     memset(&msg_result, 0, sizeof(tp_multi_msg_t));
-
+    
     uint32_t last_update_ms[5] = {0};
+    uint8_t data[64]; // 预分配缓冲区
 
     while (1) {
-        bool has_new_packet = false;
-
+        bool need_to_send = false;
+        uint32_t now = xTaskGetTickCount() * portTICK_PERIOD_MS;
         while (gpio_get_level(INT_IO) == 0) {
-            uint8_t data[64];
             if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(5)) == ESP_OK) {
                 if (data[2] == 0x04) { 
                     uint8_t status = data[3];
@@ -152,37 +152,38 @@ void elan_i2c_task(void *arg) {
                         msg_result.fingers[contact_id].y = raw_y;
                         msg_result.fingers[contact_id].contact_id = contact_id;
                         
-                        last_update_ms[contact_id] = xTaskGetTickCount() * portTICK_PERIOD_MS;
-                        has_new_packet = true;
+                        last_update_ms[contact_id] = now;
+                        need_to_send = true;
                     }
                     
                     if (data[11] == 0x81) {
-                        locked_button = (raw_x > 1800) ? 0x02 : 0x01;
-                        msg_result.button_mask = 0x01;
+                        msg_result.button_mask = 0x01; 
                     } else {
                         msg_result.button_mask = 0;
                     }
                 }
+            } else {
+                break;
             }
         }
-
-        uint32_t now = xTaskGetTickCount() * portTICK_PERIOD_MS;
         for (int i = 0; i < 5; i++) {
-            if (msg_result.fingers[i].tip_switch && (now - last_update_ms[i] > 100)) {
+            if (msg_result.fingers[i].tip_switch && (now - last_update_ms[i] > 35)) {
                 msg_result.fingers[i].tip_switch = 0;
-                has_new_packet = true;
+                need_to_send = true;
             }
         }
 
-        if (has_new_packet) {
+        if (need_to_send) {
             uint8_t count = 0;
             for (int i = 0; i < 5; i++) {
-                if (msg_result.fingers[i].tip_switch) count++;
+                if (msg_result.fingers[i].tip_switch) {
+                    count++;
+                }
             }
             msg_result.actual_count = count;
             xQueueSend(tp_queue, &msg_result, 0);
         }
-
+        
         vTaskDelay(pdMS_TO_TICKS(1)); 
     }
 }
