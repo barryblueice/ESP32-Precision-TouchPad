@@ -159,8 +159,6 @@ const uint8_t hid_report_descriptor[] = {
     0x81, 0x02,                         //     INPUT (Data,Var,Abs)
     0x05, 0x09,                         //     USAGE_PAGE (Button)
     0x09, 0x01,                         //     USAGE_(Button 1)
-    0x09, 0x02,                         //     USAGE_(Button 2)
-    0x09, 0x03,                         //     USAGE_(Button 3)
     0x25, 0x01,                         //     LOGICAL_MAXIMUM (1)
     0x75, 0x01,                         //     REPORT_SIZE (1)
     0x95, 0x03,                         //     REPORT_COUNT (3)

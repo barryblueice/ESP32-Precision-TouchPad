@@ -143,8 +143,8 @@ void usbhid_task(void *arg) {
                 if (msg.fingers[i].tip_switch) {
                     uint16_t tx = (uint16_t)(msg.fingers[i].x * scale_x);
                     uint16_t ty = (uint16_t)(msg.fingers[i].y * scale_y);
-
-                    report.fingers[i].tip_conf_id = PTP_CONFIDENCE_BIT | PTP_TIP_SWITCH_BIT | (i << 2);
+                    uint8_t contact_id = i; 
+                    report.fingers[i].tip_conf_id = PTP_CONFIDENCE_BIT | PTP_TIP_SWITCH_BIT | (contact_id << 2);
                     report.fingers[i].x = tx;
                     report.fingers[i].y = ty;
                 } else {

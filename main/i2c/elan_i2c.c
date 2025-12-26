@@ -131,13 +131,11 @@ void elan_i2c_task(void *arg) {
     uint8_t locked_button = 0;
     memset(&msg_result, 0, sizeof(tp_multi_msg_t));
 
-    // 记录每个 ID 最后一次更新的时间（用于超时强制释放）
     uint32_t last_update_ms[5] = {0};
 
     while (1) {
         bool has_new_packet = false;
 
-        // 1. 读取当前中断周期内的所有包
         while (gpio_get_level(INT_IO) == 0) {
             uint8_t data[64];
             if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(5)) == ESP_OK) {
