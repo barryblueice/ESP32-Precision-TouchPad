@@ -128,53 +128,46 @@ typedef struct __attribute__((packed)) {
 static const float scale_x = 4095.0f / 3679.0f;
 static const float scale_y = 4095.0f / 2261.0f;
 
+#define PTP_CONFIDENCE_BIT (1 << 0)
+#define PTP_TIP_SWITCH_BIT (1 << 1)
+
 void usbhid_task(void *arg) {
     tp_multi_msg_t msg;
-    static uint16_t last_valid_x[5] = {0};
-    static uint16_t last_valid_y[5] = {0};
     
-    const uint16_t LOGICAL_MAX_X = 4095;
-    const uint16_t LOGICAL_MAX_Y = 4095;
-
     while (1) {
         if (xQueueReceive(tp_queue, &msg, portMAX_DELAY)) {
             ptp_report_t report = {0};
-            uint64_t now = esp_timer_get_time();
-            report.scan_time = (uint16_t)((now / 100) & 0xFFFF);
-
-            report.buttons = (msg.button_mask > 0) ? 0x01 : 0x00;
-
+            
+            report.scan_time = (uint16_t)((esp_timer_get_time() / 100) & 0xFFFF);
             for (int i = 0; i < 5; i++) {
+                uint16_t tx = (uint16_t)(msg.fingers[i].x * scale_x);
+                uint16_t ty = (uint16_t)(msg.fingers[i].y * scale_y);
+
                 if (msg.fingers[i].tip_switch) {
-                    float sx = msg.fingers[i].x * scale_x;
-                    float sy = msg.fingers[i].y * scale_y;
-
-                    uint16_t cur_x = (sx > LOGICAL_MAX_X) ? LOGICAL_MAX_X : (uint16_t)sx;
-                    uint16_t cur_y = (sy > LOGICAL_MAX_Y) ? LOGICAL_MAX_Y : (uint16_t)sy;
-
-                    last_valid_x[i] = cur_x;
-                    last_valid_y[i] = cur_y;
-
-                    report.fingers[i].tip_conf_id = 0x03 | (msg.fingers[i].contact_id << 2);
-                    report.fingers[i].x = cur_x;
-                    report.fingers[i].y = cur_y;
+                    report.fingers[i].tip_conf_id = PTP_CONFIDENCE_BIT | PTP_TIP_SWITCH_BIT | (i << 2);
+                    report.fingers[i].x = tx;
+                    report.fingers[i].y = ty;
                 } else {
-                    report.fingers[i].tip_conf_id = (i << 2) | 0x00;
-                    report.fingers[i].x = last_valid_x[i];
-                    report.fingers[i].y = last_valid_y[i];
+                    report.fingers[i].tip_conf_id = PTP_CONFIDENCE_BIT | (i << 2);
+                    report.fingers[i].x = tx;
+                    report.fingers[i].y = ty;
                 }
             }
 
             report.contact_count = msg.actual_count;
-
-            if (report.buttons > 0 && report.contact_count == 0) {
-                report.fingers[0].tip_conf_id = 0x03;
-                report.fingers[0].x = last_valid_x[0];
-                report.fingers[0].y = last_valid_y[0];
-                report.contact_count = 1;
+            if (msg.button_mask > 0x00) {
+                report.buttons = 0x01;
+            } else {
+                report.buttons = 0x00;
             }
 
-            tud_hid_report(REPORTID_TOUCHPAD, &report, sizeof(report));
+            ESP_LOGI(TAG, "TP Report: X=%d Y=%d Count=%d BTN=%d", 
+                     report.fingers[0].x, report.fingers[0].y, 
+                     report.contact_count, report.buttons);
+
+            if (tud_hid_ready()) {
+                tud_hid_report(REPORTID_TOUCHPAD, &report, sizeof(report));
+            }
         }
     }
 }
