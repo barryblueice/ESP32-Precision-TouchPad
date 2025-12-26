@@ -155,14 +155,17 @@ void elan_i2c_task(void *arg) {
 
     while (1) {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-        while (gpio_get_level(INT_IO) == 0) {
-            if (i2c_master_receive(dev_handle, rx_buf, sizeof(rx_buf), pdMS_TO_TICKS(5)) == ESP_OK) {
-                
+        int retry_count = 0;
+        while (gpio_get_level(INT_IO) == 0 && retry_count < 5) {
+            esp_err_t err = i2c_master_receive(dev_handle, rx_buf, sizeof(rx_buf), pdMS_TO_TICKS(5));
+            
+            if (err == ESP_OK) {
                 parse_ptp_data(rx_buf, &msg);
                 xQueueSend(tp_queue, &msg, 0);
             } else {
                 break;
             }
+            retry_count++;
         }
     }
 }
