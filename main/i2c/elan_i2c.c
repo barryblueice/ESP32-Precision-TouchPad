@@ -133,61 +133,33 @@ void elan_i2c_task(void *arg) {
     tp_interrupt_init();
 
     tp_multi_msg_t current_state; 
-    memset(&current_state, 0, sizeof(tp_multi_msg_t));
-    uint32_t last_update_ms[5] = {0};
     uint8_t data[64];
-
-    const TickType_t xPeriod = pdMS_TO_TICKS(10);
     TickType_t xLastWakeTime = xTaskGetTickCount();
 
     while (1) {
-        ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(5)); 
+        ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(10)); 
 
-        uint32_t now = xTaskGetTickCount() * portTICK_PERIOD_MS;
-        bool need_send = false;
+        for (int i = 0; i < 5; i++) {
+            current_state.fingers[i].tip_switch = 0;
+        }
+        current_state.actual_count = 0;
+        bool has_data = false;
 
-        tp_finger_life_t finger_life[5] = {0};
-
-       while (gpio_get_level(INT_IO) == 0) {
+        while (gpio_get_level(INT_IO) == 0) {
             if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(2)) == ESP_OK) {
+                
                 current_state.button_mask = (data[11] == 0x81) ? 0x01 : 0x00;
+
                 if (data[2] == 0x04) {
+                    has_data = true;
                     uint8_t status = data[3];
                     uint8_t id = (status & 0xF0) >> 4;
+                    
                     if (id < 5) {
-                        bool tip = status & 0x01;
-                        uint16_t x = data[4] | (data[5] << 8);
-                        uint16_t y = data[6] | (data[7] << 8);
-
-                        if (tip && !finger_life[id].active) {
-                            finger_life[id].active = true;
-                            finger_life[id].down_time = esp_timer_get_time() / 1000;
-                            finger_life[id].start_x = x;
-                            finger_life[id].start_y = y;
-                            finger_life[id].max_move = 0;
-                        } else if (tip && finger_life[id].active) {
-                            uint16_t dx = abs(x - finger_life[id].start_x);
-                            uint16_t dy = abs(y - finger_life[id].start_y);
-                            uint16_t move = dx > dy ? dx : dy;
-                            if (move > finger_life[id].max_move) finger_life[id].max_move = move;
-                        } else if (!tip && finger_life[id].active) {
-                            uint32_t duration = (esp_timer_get_time() / 1000) - finger_life[id].down_time;
-                            if (finger_life[id].max_move < TAP_MOVE_THRESHOLD && duration < TAP_TIME_THRESHOLD) {
-                                current_state.fingers[id].x = finger_life[id].start_x;
-                                current_state.fingers[id].y = finger_life[id].start_y;
-                            } else {
-                                current_state.fingers[id].x = x;
-                                current_state.fingers[id].y = y;
-                            }
-                            finger_life[id].active = false;
-                        }
-
-                        current_state.fingers[id].tip_switch = tip ? 1 : 0;
-                        current_state.fingers[id].x = x;
-                        current_state.fingers[id].y = y;
+                        current_state.fingers[id].tip_switch = (status & 0x01);
+                        current_state.fingers[id].x = data[4] | (data[5] << 8);
+                        current_state.fingers[id].y = data[6] | (data[7] << 8);
                         current_state.fingers[id].contact_id = id;
-                        last_update_ms[id] = now;
-                        need_send = true;
                     }
                 }
             } else {
@@ -195,37 +167,16 @@ void elan_i2c_task(void *arg) {
             }
         }
 
-        uint8_t tap_ids[5];
-        uint8_t tap_count = 0;
+        uint8_t count = 0;
         for (int i = 0; i < 5; i++) {
-            if (!finger_life[i].active && current_state.fingers[i].tip_switch &&
-                finger_life[i].max_move < TAP_MOVE_THRESHOLD) {
-                tap_ids[tap_count++] = i;
-            }
+            if (current_state.fingers[i].tip_switch) count++;
         }
-        if (tap_count == 2) {
-            uint32_t t0 = finger_life[tap_ids[0]].down_time;
-            uint32_t t1 = finger_life[tap_ids[1]].down_time;
-            if (abs((int32_t)(t0 - t1)) <= DOUBLE_TAP_WINDOW) {
-                for (int i = 0; i < 2; i++) {
-                    uint8_t id = tap_ids[i];
-                    current_state.fingers[id].tip_switch = 0;
-                    current_state.fingers[id].x = finger_life[id].start_x;
-                    current_state.fingers[id].y = finger_life[id].start_y;
-                }
-            }
-        }
+        current_state.actual_count = count;
 
-
-        if (need_send) {
-            uint8_t active_count = 0;
-            for (int i = 0; i < 5; i++) {
-                if (current_state.fingers[i].tip_switch) active_count++;
-            }
-            current_state.actual_count = active_count;
+        if (has_data || current_state.button_mask) {
             xQueueOverwrite(tp_queue, &current_state);
         }
 
-        vTaskDelayUntil(&xLastWakeTime, xPeriod);
+        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); 
     }
 }
