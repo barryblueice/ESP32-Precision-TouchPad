@@ -16,6 +16,15 @@ typedef struct {
     uint8_t button_mask;
 } tp_multi_msg_t;
 
+typedef struct {
+    bool active;
+    uint32_t down_time;
+    uint16_t start_x;
+    uint16_t start_y;
+    uint16_t max_move;
+    bool tap_detected;
+} tp_finger_life_t;
+
 extern QueueHandle_t tp_queue;
 
 void elan_i2c_task(void *arg);
