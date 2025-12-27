@@ -11,6 +11,8 @@
 
 #include "usb/usbhid.h"
 
+#include <math.h>
+
 static const char *TAG = "ELAN_PTP";
 
 QueueHandle_t tp_queue = NULL;
@@ -128,13 +130,23 @@ static void parse_ptp_report(uint8_t *data, int len, finger_layout_t layout, tp_
     msg_out->actual_count = count;
 }
 
+#define TAP_DEADZONE 20
+#define SETTLING_MS 15
+#define FILTER_ALPHA 0.5f
+
+static float filtered_x[5] = {0};
+static float filtered_y[5] = {0};
+
 void elan_i2c_task(void *arg) {
     elan_i2c_init();
     tp_interrupt_init();
 
     static uint16_t last_raw_x[5] = {0};
     static uint16_t last_raw_y[5] = {0};
+    static uint16_t origin_x[5] = {0};
+    static uint16_t origin_y[5] = {0};
     static int64_t last_report_time = 0;
+    static int64_t first_touch_time = 0;
     
     uint8_t data[64];
     const uint16_t JUMP_THRESHOLD = 800;
@@ -148,13 +160,15 @@ void elan_i2c_task(void *arg) {
         int64_t now = esp_timer_get_time() / 1000;
 
         if (now - last_report_time > STALE_MS) {
-            for (int i = 0; i < 5; i++) { last_raw_x[i] = 0; last_raw_y[i] = 0; }
+            for (int i = 0; i < 5; i++) { 
+                last_raw_x[i] = 0; last_raw_y[i] = 0; 
+                origin_x[i] = 0; origin_y[i] = 0;
+            }
         }
 
         int safety = 10;
         while (gpio_get_level(INT_IO) == 0 && safety-- > 0) {
             if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(10)) == ESP_OK) {
-                
                 current_state.button_mask = (data[11] & 0x01) ? 0x01 : 0x00;
 
                 if (data[2] == 0x04) {
@@ -167,24 +181,50 @@ void elan_i2c_task(void *arg) {
                         uint16_t ry = data[6] | (data[7] << 8);
 
                         if (tip && rx > 0 && ry > 0) {
-                            if (last_raw_x[id] != 0) {
-                                if (abs((int)rx - (int)last_raw_x[id]) > JUMP_THRESHOLD) {
-                                    rx = last_raw_x[id];
-                                    ry = last_raw_y[id];
-                                }
+
+                            if (last_raw_x[id] == 0) {
+                                filtered_x[id] = (float)rx;
+                                filtered_y[id] = (float)ry;
+                                origin_x[id] = rx;
+                                origin_y[id] = ry;
+                                if (first_touch_time == 0) first_touch_time = now;
+                            } else {
+                                float dist = sqrtf(powf(rx - last_raw_x[id], 2) + powf(ry - last_raw_y[id], 2));
+                                float dynamic_alpha = (dist > 30.0f) ? 0.8f : 0.3f;
+                                filtered_x[id] = (dynamic_alpha * (float)rx) + ((1.0f - dynamic_alpha) * filtered_x[id]);
+                                filtered_y[id] = (dynamic_alpha * (float)ry) + ((1.0f - dynamic_alpha) * filtered_y[id]);
                             }
+
+                            uint16_t fx = (uint16_t)filtered_x[id];
+                            uint16_t fy = (uint16_t)filtered_y[id];
+
+                            int dx = abs((int)rx - (int)origin_x[id]);
+                            int dy = abs((int)ry - (int)origin_y[id]);
+
+                            if (dx < TAP_DEADZONE && dy < TAP_DEADZONE) {
+                                current_state.fingers[id].x = origin_x[id];
+                                current_state.fingers[id].y = origin_y[id];
+                            } else {
+                                current_state.fingers[id].x = fx;
+                                current_state.fingers[id].y = fy;
+                            }
+
+                            if (last_raw_x[id] != 0 && abs((int)rx - (int)last_raw_x[id]) > JUMP_THRESHOLD) {
+                                current_state.fingers[id].x = last_raw_x[id];
+                                current_state.fingers[id].y = last_raw_y[id];
+                            }
+
                             last_raw_x[id] = rx;
                             last_raw_y[id] = ry;
-                            
                             current_state.fingers[id].tip_switch = 1;
-                            current_state.fingers[id].x = rx;
-                            current_state.fingers[id].y = ry;
                             current_state.fingers[id].contact_id = id;
                             has_data = true;
                         } else {
-                            last_raw_x[id] = 0;
-                            last_raw_y[id] = 0;
+                            last_raw_x[id] = 0; last_raw_y[id] = 0;
+                            origin_x[id] = 0; origin_y[id] = 0;
                             current_state.fingers[id].tip_switch = 0;
+                            filtered_x[id] = 0;
+                            filtered_y[id] = 0;
                             has_data = true;
                         }
                     }
@@ -200,7 +240,12 @@ void elan_i2c_task(void *arg) {
                 if (current_state.fingers[i].tip_switch) active_count++;
             }
             current_state.actual_count = active_count;
-            
+            if (active_count > 0 && active_count < 4 && (now - first_touch_time < SETTLING_MS)) {
+                continue; 
+            }
+
+            if (active_count == 0) first_touch_time = 0;
+
             last_report_time = now;
             xQueueOverwrite(tp_queue, &current_state);
         }
