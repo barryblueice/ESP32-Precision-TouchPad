@@ -169,10 +169,11 @@ void usbhid_task(void *arg) {
             //     report.fingers[1].y = 2586;
             // }
 
-            // ESP_LOGI(TAG, "TP Report: X[0]=%d Y[0]=%d X[1]=%d Y[1]=%d Count=%d Physical BTN=%d ConfMode=%d tip_conf_id[0]=%d tip_conf_id[1]=%d ScanTime=%d", 
-            //          report.fingers[0].x, report.fingers[0].y,
+            // ESP_LOGI(TAG, "TP Report: X[0]=%d Y[0]=%d X[1]=%d Y[1]=%d Count=%d Physical BTN=%d ConfMode=%d tip_conf_id[0]=%d tip_conf_id[1]=%d ScanTime=%d TipSwitch[0]=%d TipSwitch[1]=%d", 
+            //          report.fingers[0].x, report.fingers[0]. y,
             //          report.fingers[1].x, report.fingers[1].y, 
-            //          report.contact_count, report.buttons, report.contact_count, report.fingers[0].tip_conf_id, report.fingers[1].tip_conf_id, report.scan_time);
+            //          report.contact_count, report.buttons, report.contact_count, report.fingers[0].tip_conf_id, report.fingers[1].tip_conf_id, report.scan_time, msg.fingers[0].tip_switch, msg.fingers[1].tip_switch);
+            
             if (tud_hid_ready()) {
                 tud_hid_report(REPORTID_TOUCHPAD, &report, sizeof(report));
             }

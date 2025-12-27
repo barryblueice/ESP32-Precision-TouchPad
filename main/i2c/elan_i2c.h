@@ -11,6 +11,7 @@ typedef struct {
         uint16_t y;
         uint8_t  tip_switch;
         uint8_t  contact_id;
+        uint8_t tip_switch_prev;
     } fingers[5];
     uint8_t actual_count;
     uint8_t button_mask;

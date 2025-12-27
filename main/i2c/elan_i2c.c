@@ -135,6 +135,8 @@ void elan_i2c_task(void *arg) {
     tp_multi_msg_t current_state; 
     uint8_t data[64];
     TickType_t xLastWakeTime = xTaskGetTickCount();
+    static uint8_t last_count = 0;
+    static uint8_t last_buttons = 0;
 
     while (1) {
         ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(10)); 
@@ -143,6 +145,7 @@ void elan_i2c_task(void *arg) {
             current_state.fingers[i].tip_switch = 0;
         }
         current_state.actual_count = 0;
+        current_state.button_mask = 0;
         bool has_data = false;
 
         while (gpio_get_level(INT_IO) == 0) {
@@ -173,9 +176,15 @@ void elan_i2c_task(void *arg) {
         }
         current_state.actual_count = count;
 
-        if (has_data || current_state.button_mask) {
+        if (has_data || 
+            current_state.button_mask != last_buttons || 
+            (current_state.actual_count == 0 && last_count > 0)) 
+        {
             xQueueOverwrite(tp_queue, &current_state);
         }
+
+        last_count = current_state.actual_count;
+        last_buttons = current_state.button_mask;
 
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); 
     }
