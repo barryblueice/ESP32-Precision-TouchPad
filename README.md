@@ -29,6 +29,7 @@ https://github.com/user-attachments/assets/256ca4d0-b585-47dc-b8cc-44001de3028a
   - [x] Single Touch Support
   - [x] Multi Touch Support
     - [x] Scroll Gesture Support
-    - [ ] Single Touch / Dual Touch Support
+    - [x] Single Tap Support
+    - [ ] Multi Tap Support
   - [x] Physical Buttons Support (left click & right click)
   - [x] Changing from freertos polling to GPIO interrupt
