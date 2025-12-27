@@ -132,34 +132,61 @@ void elan_i2c_task(void *arg) {
     elan_i2c_init();
     tp_interrupt_init();
 
-    tp_multi_msg_t current_state; 
+    static uint16_t last_raw_x[5] = {0};
+    static uint16_t last_raw_y[5] = {0};
+    static int64_t last_report_time = 0;
+    
     uint8_t data[64];
-    TickType_t xLastWakeTime = xTaskGetTickCount();
+    const uint16_t JUMP_THRESHOLD = 800;
+    const int64_t STALE_MS = 50;
 
     while (1) {
         ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(10)); 
 
-        for (int i = 0; i < 5; i++) {
-            current_state.fingers[i].tip_switch = 0;
-        }
-        current_state.actual_count = 0;
+        tp_multi_msg_t current_state = {0}; 
         bool has_data = false;
+        int64_t now = esp_timer_get_time() / 1000;
 
-        while (gpio_get_level(INT_IO) == 0) {
-            if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(2)) == ESP_OK) {
+        if (now - last_report_time > STALE_MS) {
+            for (int i = 0; i < 5; i++) { last_raw_x[i] = 0; last_raw_y[i] = 0; }
+        }
+
+        int safety = 10;
+        while (gpio_get_level(INT_IO) == 0 && safety-- > 0) {
+            if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(10)) == ESP_OK) {
                 
-                current_state.button_mask = (data[11] == 0x81) ? 0x01 : 0x00;
+                current_state.button_mask = (data[11] & 0x01) ? 0x01 : 0x00;
 
                 if (data[2] == 0x04) {
-                    has_data = true;
                     uint8_t status = data[3];
                     uint8_t id = (status & 0xF0) >> 4;
                     
                     if (id < 5) {
-                        current_state.fingers[id].tip_switch = (status & 0x01);
-                        current_state.fingers[id].x = data[4] | (data[5] << 8);
-                        current_state.fingers[id].y = data[6] | (data[7] << 8);
-                        current_state.fingers[id].contact_id = id;
+                        bool tip = (status & 0x01);
+                        uint16_t rx = data[4] | (data[5] << 8);
+                        uint16_t ry = data[6] | (data[7] << 8);
+
+                        if (tip && rx > 0 && ry > 0) {
+                            if (last_raw_x[id] != 0) {
+                                if (abs((int)rx - (int)last_raw_x[id]) > JUMP_THRESHOLD) {
+                                    rx = last_raw_x[id];
+                                    ry = last_raw_y[id];
+                                }
+                            }
+                            last_raw_x[id] = rx;
+                            last_raw_y[id] = ry;
+                            
+                            current_state.fingers[id].tip_switch = 1;
+                            current_state.fingers[id].x = rx;
+                            current_state.fingers[id].y = ry;
+                            current_state.fingers[id].contact_id = id;
+                            has_data = true;
+                        } else {
+                            last_raw_x[id] = 0;
+                            last_raw_y[id] = 0;
+                            current_state.fingers[id].tip_switch = 0;
+                            has_data = true;
+                        }
                     }
                 }
             } else {
@@ -167,16 +194,15 @@ void elan_i2c_task(void *arg) {
             }
         }
 
-        uint8_t count = 0;
-        for (int i = 0; i < 5; i++) {
-            if (current_state.fingers[i].tip_switch) count++;
-        }
-        current_state.actual_count = count;
-
         if (has_data || current_state.button_mask) {
+            uint8_t active_count = 0;
+            for (int i = 0; i < 5; i++) {
+                if (current_state.fingers[i].tip_switch) active_count++;
+            }
+            current_state.actual_count = active_count;
+            
+            last_report_time = now;
             xQueueOverwrite(tp_queue, &current_state);
         }
-
-        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10)); 
     }
 }

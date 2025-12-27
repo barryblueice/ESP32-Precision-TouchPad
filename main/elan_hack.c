@@ -202,6 +202,11 @@ static finger_layout_t parse_finger_layout(const uint8_t *desc, int len) {
 
 static void parse_ptp_report(uint8_t *data, int len, finger_layout_t layout, tp_multi_msg_t *msg_out) 
 {
+    for (size_t i = 0; i < len; i++) {
+        printf("%02X ", data[i]);
+    }
+    printf("\n");
+
     uint8_t report_id = data[2];
     if (report_id != 0x04) return;
 
