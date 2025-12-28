@@ -132,23 +132,29 @@ static const float scale_y = 4095.0f / 2261.0f;
 
 void usbhid_task(void *arg) {
     tp_multi_msg_t msg;
-    
+    static uint16_t last_scan_time = 0;
+
     while (1) {
         if (xQueueReceive(tp_queue, &msg, portMAX_DELAY)) {
             ptp_report_t report = {0};
 
-            report.scan_time = (uint16_t)((esp_timer_get_time() / 100) & 0xFFFF);
-            
+            uint32_t now = esp_timer_get_time() / 100;
+            if (now <= last_scan_time) {
+                now = last_scan_time + 1;
+            }
+            last_scan_time = now;
+            report.scan_time = (uint16_t)now;
             for (int i = 0; i < 5; i++) {
                 if (msg.fingers[i].tip_switch) {
                     uint16_t tx = (uint16_t)(msg.fingers[i].x * scale_x);
                     uint16_t ty = (uint16_t)(msg.fingers[i].y * scale_y);
                     uint8_t contact_id = i; 
+
                     report.fingers[i].tip_conf_id = PTP_CONFIDENCE_BIT | PTP_TIP_SWITCH_BIT | (contact_id << 2);
                     report.fingers[i].x = tx;
                     report.fingers[i].y = ty;
                 } else {
-                    report.fingers[i].tip_conf_id = (i << 2); 
+                    report.fingers[i].tip_conf_id = (i << 2);
                     report.fingers[i].x = 0;
                     report.fingers[i].y = 0;
                 }
@@ -156,27 +162,8 @@ void usbhid_task(void *arg) {
 
             report.contact_count = msg.actual_count;
 
-            if (msg.button_mask > 0) {
-                report.buttons = 0x01; 
-            } else {
-                report.buttons = 0x00;
-            }
+            report.buttons = (msg.button_mask > 0) ? 0x01 : 0x00;
 
-            // if (report.contact_count == 2) {
-            //     report.fingers[0].x = 3056;
-            //     report.fingers[0].y = 1774;
-            //     report.fingers[1].x = 2584;
-            //     report.fingers[1].y = 2586;
-            // }
-
-            // ESP_LOGI(TAG, "TP Report: X[0]=%d Y[0]=%d X[1]=%d Y[1]=%d X[2]=%d Y[2]=%d X[3]=%d Y[3]=%d X[4]=%d Y[4]=%d", 
-            //          report.fingers[0].x, report.fingers[0].y,
-            //          report.fingers[1].x, report.fingers[1].y, 
-            //          report.fingers[2].x, report.fingers[2].y,
-            //          report.fingers[3].x, report.fingers[3].y,
-            //          report.fingers[4].x, report.fingers[4].y
-            //          );
-            
             if (tud_hid_ready()) {
                 tud_hid_report(REPORTID_TOUCHPAD, &report, sizeof(report));
             }
