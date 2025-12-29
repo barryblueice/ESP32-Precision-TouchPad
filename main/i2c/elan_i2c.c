@@ -29,7 +29,7 @@ TaskHandle_t tp_read_task_handle = NULL;
 #define TAP_MOVE_THRESHOLD 10
 #define TAP_TIME_THRESHOLD 150
 #define DOUBLE_TAP_WINDOW  50
-#define MULTI_TAP_JOIN_MS 20
+#define MULTI_TAP_JOIN_MS 30
 
 static esp_err_t elan_activate_ptp() {
     uint8_t payload[] = {
@@ -132,7 +132,7 @@ static void parse_ptp_report(uint8_t *data, int len, finger_layout_t layout, tp_
     msg_out->actual_count = count;
 }
 
-#define TAP_DEADZONE 20
+#define TAP_DEADZONE 30
 #define SETTLING_MS 15
 #define FILTER_ALPHA 0.5f
 
@@ -232,6 +232,25 @@ void elan_i2c_task(void *arg) {
                                 tap_frozen[id] = false;
                                 current_state.fingers[id].x = fx;
                                 current_state.fingers[id].y = fy;
+                            }
+
+                            int sum_x = 0, sum_y = 0, count = 0;
+                            for (int i = 0; i < 5; i++) {
+                                if (tap_frozen[i]) {
+                                    sum_x += origin_x[i];
+                                    sum_y += origin_y[i];
+                                    count++;
+                                }
+                            }
+                            if (count > 1) {
+                                int avg_x = sum_x / count;
+                                int avg_y = sum_y / count;
+                                for (int j = 0; j < 5; j++) {
+                                    if (tap_frozen[j]) {
+                                        origin_x[j] = avg_x;
+                                        origin_y[j] = avg_y;
+                                    }
+                                }
                             }
 
                             if (!tap_frozen[id]) {
