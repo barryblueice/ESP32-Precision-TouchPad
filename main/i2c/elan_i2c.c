@@ -189,10 +189,22 @@ void elan_i2c_task(void *arg) {
                                 origin_y[id] = ry;
                                 if (first_touch_time == 0) first_touch_time = now;
                             } else {
-                                float dist = sqrtf(powf(rx - last_raw_x[id], 2) + powf(ry - last_raw_y[id], 2));
-                                float dynamic_alpha = (dist > 30.0f) ? 0.8f : 0.3f;
-                                filtered_x[id] = (dynamic_alpha * (float)rx) + ((1.0f - dynamic_alpha) * filtered_x[id]);
-                                filtered_y[id] = (dynamic_alpha * (float)ry) + ((1.0f - dynamic_alpha) * filtered_y[id]);
+                                int dx = rx - last_raw_x[id];
+                                int dy = ry - last_raw_y[id];
+                                int dist_sq = dx*dx + dy*dy;
+                                // float dynamic_alpha = (dist > 30.0f) ? 0.8f : 0.3f;
+                                float dynamic_alpha;
+                                if (last_raw_x[id] == 0) {
+                                    dynamic_alpha = 1.0f;
+                                } else if (dist_sq < 64) {
+                                    dynamic_alpha = 0.6f;
+                                } else if (dist_sq < 900) {
+                                    dynamic_alpha = 0.4f;
+                                } else {
+                                    dynamic_alpha = 0.8f;
+                                }
+                                filtered_x[id] = dynamic_alpha * rx + (1.0f - dynamic_alpha) * filtered_x[id];
+                                filtered_y[id] = dynamic_alpha * ry + (1.0f - dynamic_alpha) * filtered_y[id];
                             }
 
                             uint16_t fx = (uint16_t)filtered_x[id];
