@@ -218,6 +218,15 @@ void elan_i2c_task(void *arg) {
                             uint16_t fx = (uint16_t)filtered_x[id];
                             uint16_t fy = (uint16_t)filtered_y[id];
 
+                            int dx_raw = rx - last_raw_x[id];
+                            int dy_raw = ry - last_raw_y[id];
+
+                            if (abs(dx_raw) > abs(dy_raw) * 2 && abs(dy_raw) < 6) {
+                                ry = last_raw_y[id];
+                            } else if (abs(dy_raw) > abs(dx_raw) * 2 && abs(dx_raw) < 6) {
+                                rx = last_raw_x[id];
+                            }
+
                             int dx = abs((int)rx - (int)origin_x[id]);
                             int dy = abs((int)ry - (int)origin_y[id]);
 
