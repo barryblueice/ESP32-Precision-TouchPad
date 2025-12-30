@@ -146,8 +146,8 @@ void usbhid_task(void *arg) {
             report.scan_time = (uint16_t)now;
             for (int i = 0; i < 5; i++) {
                 if (msg.fingers[i].tip_switch) {
-                    uint16_t tx = (uint16_t)(msg.fingers[i].x * scale_x);
-                    uint16_t ty = (uint16_t)(msg.fingers[i].y * scale_y);
+                    uint16_t tx = (uint16_t)(msg.fingers[i].x * scale_x + 0.5f);
+                    uint16_t ty = (uint16_t)(msg.fingers[i].y * scale_y + 0.5f);
                     uint8_t contact_id = i; 
 
                     report.fingers[i].tip_conf_id = PTP_CONFIDENCE_BIT | PTP_TIP_SWITCH_BIT | (contact_id << 2);
