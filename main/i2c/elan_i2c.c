@@ -139,6 +139,13 @@ static void parse_ptp_report(uint8_t *data, int len, finger_layout_t layout, tp_
 static float filtered_x[5] = {0};
 static float filtered_y[5] = {0};
 
+typedef enum {
+    TOUCH_IDLE,
+    TOUCH_TAP_CANDIDATE,
+    TOUCH_DRAG
+} touch_state_t;
+
+
 void elan_i2c_task(void *arg) {
     elan_i2c_init();
     tp_interrupt_init();
@@ -150,6 +157,8 @@ void elan_i2c_task(void *arg) {
     static int64_t last_report_time = 0;
     static int64_t first_touch_time = 0;
     static bool tap_frozen[5] = {false};
+    static touch_state_t touch_state[5] = {0};
+    static int64_t touch_start_time[5] = {0};
     
     uint8_t data[64];
     const uint16_t JUMP_THRESHOLD = 800;
@@ -185,6 +194,8 @@ void elan_i2c_task(void *arg) {
 
                         if (tip && rx > 0 && ry > 0) {
                             if (last_raw_x[id] == 0) {
+                                touch_state[id] = TOUCH_TAP_CANDIDATE;
+                                touch_start_time[id] = now;
                                 if (first_touch_time != 0 && (now - first_touch_time) < MULTI_TAP_JOIN_MS) {
                                     origin_x[id] = rx;
                                     origin_y[id] = ry;
@@ -230,7 +241,14 @@ void elan_i2c_task(void *arg) {
                             int dx = abs((int)rx - (int)origin_x[id]);
                             int dy = abs((int)ry - (int)origin_y[id]);
 
-                            if (dx < TAP_DEADZONE && dy < TAP_DEADZONE) {
+                            if (touch_state[id] == TOUCH_TAP_CANDIDATE) {
+                                if (dx > TAP_DEADZONE || dy > TAP_DEADZONE) {
+                                    touch_state[id] = TOUCH_DRAG;
+                                    tap_frozen[id] = false;
+                                }
+                            }
+
+                            if (touch_state[id] == TOUCH_TAP_CANDIDATE && dx < TAP_DEADZONE && dy < TAP_DEADZONE) {
                                 if (!tap_frozen[id]) {
                                     tap_frozen[id] = true;
                                     filtered_x[id] = origin_x[id];
@@ -283,6 +301,7 @@ void elan_i2c_task(void *arg) {
                             filtered_x[id] = 0;
                             filtered_y[id] = 0;
                             tap_frozen[id] = false;
+                            touch_state[id] = TOUCH_IDLE;
                             current_state.fingers[id].tip_switch = 0;
                             has_data = true;
                         }
