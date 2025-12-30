@@ -15,25 +15,30 @@ static const char *TAG = "ELAN_PTP_FINAL";
 #define RST_IO      6
 #define INT_IO      7
 
+/* ---------- I2C ---------- */
 i2c_master_dev_handle_t dev_handle = NULL;
 i2c_master_bus_handle_t bus_handle = NULL;
+
 uint8_t *report_desc = NULL;
 int report_desc_len = 0;
+
+typedef struct {
+    uint16_t max_x;
+    uint16_t max_y;
+} tp_max_xy_t;
+
+static tp_max_xy_t g_max_xy = {0, 0};
 
 typedef struct {
     uint8_t tip_offset;
     uint8_t id_offset;
     uint8_t x_offset;
     uint8_t y_offset;
-    uint8_t x_size;
-    uint8_t y_size;
     uint8_t block_size;
+    uint16_t x_size;
+    uint16_t y_size;
     bool nibble_packed;
 } finger_layout_t;
-typedef struct {
-    uint16_t max_x;
-    uint16_t max_y;
-} tp_max_xy_t;
 
 typedef struct {
     struct {
@@ -43,38 +48,8 @@ typedef struct {
         uint8_t  contact_id;
     } fingers[5];
     uint8_t actual_count;
-    uint8_t button_mask; // 物理按键状态
+    uint8_t button_mask;
 } tp_multi_msg_t;
-
-static tp_max_xy_t elan_parse_max_xy(const uint8_t *desc, int len) {
-    tp_max_xy_t max_val = {0,0};
-
-    for (int i = 0; i < len-1; i++) {
-        // X 坐标逻辑最大值
-        if (desc[i] == 0x09 && desc[i+1] == 0x30) { // USAGE X
-            for (int j = i; j < len-2; j++) {
-                if (desc[j] == 0x26) { // LOGICAL_MAXIMUM (2 byte)
-                    max_val.max_x = desc[j+1] | (desc[j+2]<<8);
-                    ESP_LOGI(TAG, "Raw X LOGICAL_MAX: 0x%02X 0x%02X -> %d", desc[j+1], desc[j+2], max_val.max_x);
-                    break;
-                }
-            }
-        }
-        // Y 坐标逻辑最大值
-        if (desc[i] == 0x09 && desc[i+1] == 0x31) { // USAGE Y
-            for (int j = i; j < len-2; j++) {
-                if (desc[j] == 0x26) { // LOGICAL_MAXIMUM (2 byte)
-                    max_val.max_y = desc[j+1] | (desc[j+2]<<8);
-                    ESP_LOGI(TAG, "Raw Y LOGICAL_MAX: 0x%02X 0x%02X -> %d", desc[j+1], desc[j+2], max_val.max_y);
-                    break;
-                }
-            }
-        }
-    }
-
-    ESP_LOGI(TAG, "Detected Max X = %d, Max Y = %d", max_val.max_x, max_val.max_y);
-    return max_val;
-}
 
 
 static void hex_dump(const uint8_t *buf, int len) {
@@ -85,28 +60,67 @@ static void hex_dump(const uint8_t *buf, int len) {
     printf("\n");
 }
 
+static tp_max_xy_t elan_parse_max_xy(const uint8_t *desc, int len) {
+    tp_max_xy_t max_val = {0, 0};
+
+    bool in_x = false;
+    bool in_y = false;
+
+    for (int i = 0; i < len - 3; i++) {
+
+        /* 进入 X / Y Usage */
+        if (desc[i] == 0x09 && desc[i+1] == 0x30) { // USAGE X
+            in_x = true;
+            in_y = false;
+            continue;
+        }
+        if (desc[i] == 0x09 && desc[i+1] == 0x31) { // USAGE Y
+            in_y = true;
+            in_x = false;
+            continue;
+        }
+
+        /* 只接受 16bit LOGICAL_MAXIMUM */
+        if (desc[i] == 0x26) {
+            uint16_t value = desc[i+1] | (desc[i+2] << 8);
+
+            if (in_x && value > max_val.max_x) {
+                max_val.max_x = value;
+            }
+            if (in_y && value > max_val.max_y) {
+                max_val.max_y = value;
+            }
+        }
+    }
+
+    ESP_LOGI(TAG, "Touchpad Size (RAW): X=%d Y=%d",
+             max_val.max_x, max_val.max_y);
+
+    return max_val;
+}
+
+
 esp_err_t elan_activate_ptp_payload() {
     uint8_t payload[] = {
-        0x05, 0x00, 0x33, 0x03, 0x06, 0x00, 0x05, 0x00, 0x03, 0x03, 0x00
+        0x05, 0x00, 0x33, 0x03, 0x06,
+        0x00, 0x05, 0x00, 0x03, 0x03, 0x00
     };
-    ESP_LOGI(TAG, "Sending Specialized PTP Activation Payload...");
+    ESP_LOGI(TAG, "Sending PTP Activation Payload");
     return i2c_master_transmit(dev_handle, payload, sizeof(payload), 200);
 }
 
 static bool elan_read_descriptors() {
     esp_err_t ret;
     uint8_t hid_desc[32] = {0};
-    uint8_t hid_req[2] = {0x01, 0x00};
+    uint8_t req[2] = {0x01, 0x00};
 
-    ret = i2c_master_transmit_receive(dev_handle, hid_req, 2, hid_desc, 30, pdMS_TO_TICKS(200));
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "HID Descriptor read failed");
-        return false;
-    }
+    ret = i2c_master_transmit_receive(
+        dev_handle, req, 2, hid_desc, 30, pdMS_TO_TICKS(200)
+    );
+    if (ret != ESP_OK) return false;
 
-    hex_dump(hid_desc, 30);
-    report_desc_len = hid_desc[4] | (hid_desc[5]<<8);
-    uint16_t report_reg = hid_desc[6] | (hid_desc[7]<<8);
+    report_desc_len = hid_desc[4] | (hid_desc[5] << 8);
+    uint16_t report_reg = hid_desc[6] | (hid_desc[7] << 8);
 
     if (report_desc_len == 0 || report_desc_len > 1024) return false;
 
@@ -114,190 +128,111 @@ static bool elan_read_descriptors() {
     if (!report_desc) return false;
 
     uint8_t reg[2] = { report_reg & 0xFF, report_reg >> 8 };
-    ret = i2c_master_transmit_receive(dev_handle, reg, 2, report_desc, report_desc_len, pdMS_TO_TICKS(500));
+    ret = i2c_master_transmit_receive(
+        dev_handle, reg, 2, report_desc, report_desc_len, pdMS_TO_TICKS(500)
+    );
     if (ret != ESP_OK) {
         free(report_desc);
         report_desc = NULL;
         return false;
     }
 
-    ESP_LOGI(TAG, "Report Descriptor (%d bytes):", report_desc_len);
+    ESP_LOGI(TAG, "Report Descriptor (%d bytes)", report_desc_len);
     hex_dump(report_desc, report_desc_len);
     return true;
 }
 
-static finger_layout_t parse_finger_layout(const uint8_t *desc, int len) {
+static finger_layout_t parse_finger_layout(void) {
     finger_layout_t layout = {0};
 
-    for (int i = 0; i < len-1; i++) {
-        if (desc[i] == 0x09 && desc[i+1] == 0x30) { // X usage
-            layout.nibble_packed = true;
-            layout.tip_offset = 0;
-            layout.id_offset = 1;
-            layout.x_offset = 2;
-            layout.y_offset = 4;
-            layout.block_size = 5;
-            layout.x_size = 12;
-            layout.y_size = 12;
-            return layout;
-        }
-    }
-
-    layout.nibble_packed = false;
     layout.tip_offset = 0;
-    layout.id_offset = 1;
-    layout.x_offset = 2;
-    layout.y_offset = 4;
+    layout.id_offset  = 1;
+    layout.x_offset   = 2;
+    layout.y_offset   = 4;
     layout.block_size = 6;
-    layout.x_size = 16;
-    layout.y_size = 16;
+    layout.nibble_packed = false;
+
+    layout.x_size = g_max_xy.max_x;
+    layout.y_size = g_max_xy.max_y;
+
+    ESP_LOGI(TAG, "Finger Layout: X=%d Y=%d",
+             layout.x_size, layout.y_size);
+
     return layout;
 }
 
-// static void parse_ptp_report(uint8_t *data, int len, finger_layout_t layout, tp_multi_msg_t *msg_out) 
-// {
-//     uint8_t report_id = data[2];
-//     if (report_id != 0x04) return;
+static void parse_ptp_report(uint8_t *data, int len,
+                             finger_layout_t layout,
+                             tp_multi_msg_t *msg_out) {
 
-//     static bool is_detecting_click = false; 
-//     static uint8_t locked_button = 0;
-
-//     memset(msg_out, 0, sizeof(tp_multi_msg_t));
-
-//     uint16_t raw_x = data[4] | (data[5] << 8);
-//     uint16_t raw_y = data[6] | (data[7] << 8);
-//     bool physical_pressed = (data[11] == 0x81);
-//     uint8_t status = data[3];
-//     bool tip = (status & 0x01);
-//     if (physical_pressed) {
-//         if (!is_detecting_click) {
-//             is_detecting_click = true;
-//             if (raw_x > 1700) {
-//                 locked_button = 0x02;
-//             } else if (raw_x > 0) {
-//                 locked_button = 0x01;
-//             } else {
-//                 is_detecting_click = false; 
-//             }
-//         }
-//         msg_out->button_mask = locked_button;
-//     } else {
-        
-//         is_detecting_click = false;
-//         locked_button = 0;
-//         msg_out->button_mask = 0;
-//     }
-
-//     if (tip) {
-//         msg_out->actual_count = 1;
-//         msg_out->fingers[0].tip_switch = 1;
-//         msg_out->fingers[0].x = raw_x;
-//         msg_out->fingers[0].y = raw_y;
-//     }
-
-//     if (physical_pressed) {
-//         printf("[CLICK] BTN:%d | X:%d | Raw11:%02X\n", msg_out->button_mask, raw_x, data[11]);
-//     }
-// }
-
-static void parse_ptp_report(uint8_t *data, int len, finger_layout_t layout, tp_multi_msg_t *msg_out) 
-{
-    for (size_t i = 0; i < len; i++) {
-        printf("%02X ", data[i]);
-    }
-    printf("\n");
-
-    uint8_t report_id = data[2];
-    if (report_id != 0x04) return;
+    if (data[2] != 0x04) return;
 
     static struct {
         uint16_t x;
         uint16_t y;
         bool active;
-    } finger_slots[5] = {0};
+    } slots[5] = {0};
 
     uint8_t status = data[3];
-    uint8_t contact_id = (status & 0xF0) >> 4;
-    bool tip = (status & 0x01);
-    uint16_t raw_x = data[4] | (data[5] << 8);
-    uint16_t raw_y = data[6] | (data[7] << 8);
-    bool physical_pressed = (data[11] == 0x81);
+    uint8_t cid = (status >> 4) & 0x0F;
+    bool tip = status & 0x01;
 
-    if (contact_id < 5) {
-        finger_slots[contact_id].x = raw_x;
-        finger_slots[contact_id].y = raw_y;
-        finger_slots[contact_id].active = tip;
+    uint16_t x = data[4] | (data[5] << 8);
+    uint16_t y = data[6] | (data[7] << 8);
+
+    if (x > layout.x_size) x = layout.x_size;
+    if (y > layout.y_size) y = layout.y_size;
+
+    if (cid < 5) {
+        slots[cid].x = x;
+        slots[cid].y = y;
+        slots[cid].active = tip;
     }
 
-    memset(msg_out, 0, sizeof(tp_multi_msg_t));
-    uint8_t current_active_count = 0;
-    
+    memset(msg_out, 0, sizeof(*msg_out));
+
     for (int i = 0; i < 5; i++) {
-        if (finger_slots[i].active) {
-            msg_out->fingers[current_active_count].x = finger_slots[i].x;
-            msg_out->fingers[current_active_count].y = finger_slots[i].y;
-            msg_out->fingers[current_active_count].contact_id = i;
-            msg_out->fingers[current_active_count].tip_switch = 1;
-            current_active_count++;
+        if (slots[i].active) {
+            int n = msg_out->actual_count++;
+            msg_out->fingers[n].x = slots[i].x;
+            msg_out->fingers[n].y = slots[i].y;
+            msg_out->fingers[n].contact_id = i;
+            msg_out->fingers[n].tip_switch = 1;
         }
-    }
-    msg_out->actual_count = current_active_count;
-    
-    static uint8_t last_button = 0;
-    if (physical_pressed) {
-        if (last_button == 0) {
-            msg_out->button_mask = (raw_x > 1700) ? 0x02 : 0x01;
-            last_button = msg_out->button_mask;
-        } else {
-            msg_out->button_mask = last_button;
-        }
-    } else {
-        last_button = 0;
-        msg_out->button_mask = 0;
     }
 
-    if (msg_out->actual_count > 0 || msg_out->button_mask > 0) {
-        printf("[Multi-ID] Count:%d | BTN:%d | ", msg_out->actual_count, msg_out->button_mask);
-        for(int i=0; i < msg_out->actual_count; i++) {
-            printf("F%d:[%d,%d] ", msg_out->fingers[i].contact_id, msg_out->fingers[i].x, msg_out->fingers[i].y);
+    if (msg_out->actual_count) {
+        printf("[Touch] count=%d ", msg_out->actual_count);
+        for (int i = 0; i < msg_out->actual_count; i++) {
+            printf("F%d(%d,%d) ",
+                msg_out->fingers[i].contact_id,
+                msg_out->fingers[i].x,
+                msg_out->fingers[i].y);
         }
         printf("\n");
     }
 }
 
-void elan_init_sequence() {
-    uint8_t rx[128];
+void elan_init_sequence(void) {
     gpio_set_direction(RST_IO, GPIO_MODE_OUTPUT);
     gpio_set_level(RST_IO, 0);
     vTaskDelay(pdMS_TO_TICKS(50));
     gpio_set_level(RST_IO, 1);
     vTaskDelay(pdMS_TO_TICKS(150));
 
-    uint8_t read_desc[] = {0x01, 0x00};
-    i2c_master_transmit_receive(dev_handle, read_desc, 2, rx, 30, 100);
-    vTaskDelay(pdMS_TO_TICKS(20));
-
-    uint8_t pwr_on[] = {0x05,0x00,0x08,0x00};
-    i2c_master_transmit(dev_handle, pwr_on, 4, 100);
-    vTaskDelay(pdMS_TO_TICKS(20));
-
     elan_activate_ptp_payload();
     vTaskDelay(pdMS_TO_TICKS(100));
 
-    uint8_t get_mode[] = {0x05,0x00,0x13,0x03};
-    if (i2c_master_transmit_receive(dev_handle, get_mode, 4, rx, 6, 100) == ESP_OK) {
-        ESP_LOGI(TAG, "Mode Register Status: 0x%02x", rx[4]);
-    }
-
     if (!elan_read_descriptors()) {
-        ESP_LOGE(TAG, "Failed to read report descriptor");
+        ESP_LOGE(TAG, "Descriptor read failed");
         return;
     }
-    tp_max_xy_t max_xy = elan_parse_max_xy(report_desc, report_desc_len);
+
+    g_max_xy = elan_parse_max_xy(report_desc, report_desc_len);
 }
 
 void elan_i2c_task(void *arg) {
-    i2c_master_bus_config_t bus_config = {
+    i2c_master_bus_config_t bus_cfg = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = I2C_NUM_0,
         .scl_io_num = SCL_IO,
@@ -305,7 +240,7 @@ void elan_i2c_task(void *arg) {
         .glitch_ignore_cnt = 7,
         .flags.enable_internal_pullup = true,
     };
-    ESP_ERROR_CHECK(i2c_new_master_bus(&bus_config, &bus_handle));
+    ESP_ERROR_CHECK(i2c_new_master_bus(&bus_cfg, &bus_handle));
 
     i2c_device_config_t dev_cfg = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
@@ -318,21 +253,23 @@ void elan_i2c_task(void *arg) {
     gpio_set_pull_mode(INT_IO, GPIO_PULLUP_ONLY);
 
     elan_init_sequence();
-    finger_layout_t layout = parse_finger_layout(report_desc, report_desc_len);
-    
-    tp_multi_msg_t msg_result;
-    uint8_t data[64];
+    finger_layout_t layout = parse_finger_layout();
 
-    while(1) {
+    uint8_t data[64];
+    tp_multi_msg_t msg;
+
+    while (1) {
         if (gpio_get_level(INT_IO) == 0) {
-            if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(10)) == ESP_OK) {
-                parse_ptp_report(data, sizeof(data), layout, &msg_result);
+            if (i2c_master_receive(dev_handle, data, sizeof(data),
+                                   pdMS_TO_TICKS(10)) == ESP_OK) {
+                parse_ptp_report(data, sizeof(data), layout, &msg);
             }
         }
         vTaskDelay(pdMS_TO_TICKS(1));
     }
 }
 
-void app_main() {
-    xTaskCreate(elan_i2c_task, "elan_i2c_task", 8192, NULL, 10, NULL);
+void app_main(void) {
+    xTaskCreate(elan_i2c_task, "elan_i2c_task",
+                8192, NULL, 10, NULL);
 }
