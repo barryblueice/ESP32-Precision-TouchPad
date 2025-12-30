@@ -165,7 +165,7 @@ void elan_i2c_task(void *arg) {
     const int64_t STALE_MS = 50;
 
     while (1) {
-        ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(10)); 
+        ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1)); 
 
         tp_multi_msg_t current_state = {0}; 
         bool has_data = false;
@@ -180,7 +180,7 @@ void elan_i2c_task(void *arg) {
 
         int safety = 10;
         while (gpio_get_level(INT_IO) == 0 && safety-- > 0) {
-            if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(10)) == ESP_OK) {
+            if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(5)) == ESP_OK) {
                 current_state.button_mask = (data[11] & 0x01) ? 0x01 : 0x00;
 
                 if (data[2] == 0x04) {
