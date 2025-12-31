@@ -124,11 +124,12 @@ typedef struct __attribute__((packed)) {
     uint8_t buttons;       // 1 byte
 } ptp_report_t;
 
-static const float scale_x = 4095.0f / 3679.0f;
-static const float scale_y = 4095.0f / 2261.0f;
-
 #define PTP_CONFIDENCE_BIT (1 << 0)
 #define PTP_TIP_SWITCH_BIT (1 << 1)
+
+#define RAW_X_MAX 3679
+#define RAW_Y_MAX 2261
+#define HID_MAX   4095
 
 void usbhid_task(void *arg) {
     tp_multi_msg_t msg;
@@ -146,8 +147,10 @@ void usbhid_task(void *arg) {
             report.scan_time = (uint16_t)now;
             for (int i = 0; i < 5; i++) {
                 if (msg.fingers[i].tip_switch) {
-                    uint16_t tx = (uint16_t)(msg.fingers[i].x * scale_x + 0.5f);
-                    uint16_t ty = (uint16_t)(msg.fingers[i].y * scale_y + 0.5f);
+                    uint16_t tx = (msg.fingers[i].x * HID_MAX + RAW_X_MAX / 2) / RAW_X_MAX;
+                    uint16_t ty = (msg.fingers[i].y * HID_MAX + RAW_Y_MAX / 2) / RAW_Y_MAX;
+                    if (tx > HID_MAX) tx = HID_MAX;
+                    if (ty > HID_MAX) ty = HID_MAX;
                     uint8_t contact_id = i; 
 
                     report.fingers[i].tip_conf_id = PTP_CONFIDENCE_BIT | PTP_TIP_SWITCH_BIT | (contact_id << 2);
