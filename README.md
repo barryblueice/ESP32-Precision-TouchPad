@@ -37,3 +37,9 @@ https://github.com/user-attachments/assets/256ca4d0-b585-47dc-b8cc-44001de3028a
     - [x] Multi Tap Support (It might fail to trigger occasionally)
   - [x] Physical Buttons Support (left click & right click)
   - [x] Changing from freertos polling to GPIO interrupt
+
+***
+
+# About Solution Implementation
+
+Please go to [wiki page](https://github.com/barryblueice/ESP32-Precision-TouchPad/wiki) for further detail.
