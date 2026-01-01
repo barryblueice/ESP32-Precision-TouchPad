@@ -25,6 +25,12 @@ int report_desc_len = 0;
 typedef struct {
     uint16_t max_x;
     uint16_t max_y;
+
+    uint8_t raw_x_lo;
+    uint8_t raw_x_hi;
+
+    uint8_t raw_y_lo;
+    uint8_t raw_y_hi;
 } tp_max_xy_t;
 
 static tp_max_xy_t g_max_xy = {0, 0};
@@ -60,8 +66,9 @@ static void hex_dump(const uint8_t *buf, int len) {
     printf("\n");
 }
 
-static tp_max_xy_t elan_parse_max_xy(const uint8_t *desc, int len) {
-    tp_max_xy_t max_val = {0, 0};
+static tp_max_xy_t elan_parse_max_xy(const uint8_t *desc, int len)
+{
+    tp_max_xy_t max_val = {0, 0, 0, 0};
 
     bool in_x = false;
     bool in_y = false;
@@ -69,12 +76,12 @@ static tp_max_xy_t elan_parse_max_xy(const uint8_t *desc, int len) {
     for (int i = 0; i < len - 3; i++) {
 
         /* 进入 X / Y Usage */
-        if (desc[i] == 0x09 && desc[i+1] == 0x30) { // USAGE X
+        if (desc[i] == 0x09 && desc[i + 1] == 0x30) { // USAGE X
             in_x = true;
             in_y = false;
             continue;
         }
-        if (desc[i] == 0x09 && desc[i+1] == 0x31) { // USAGE Y
+        if (desc[i] == 0x09 && desc[i + 1] == 0x31) { // USAGE Y
             in_y = true;
             in_x = false;
             continue;
@@ -82,19 +89,38 @@ static tp_max_xy_t elan_parse_max_xy(const uint8_t *desc, int len) {
 
         /* 只接受 16bit LOGICAL_MAXIMUM */
         if (desc[i] == 0x26) {
-            uint16_t value = desc[i+1] | (desc[i+2] << 8);
 
-            if (in_x && value > max_val.max_x) {
-                max_val.max_x = value;
+            if (in_x) {
+                /* 原样保存 descriptor 字节 */
+                max_val.raw_x_lo = desc[i + 1];
+                max_val.raw_x_hi = desc[i + 2];
+
+                /* 现有逻辑仍然可以用解码值 */
+                uint16_t value = desc[i + 1] | (desc[i + 2] << 8);
+                if (value > max_val.max_x) {
+                    max_val.max_x = value;
+                }
             }
-            if (in_y && value > max_val.max_y) {
-                max_val.max_y = value;
+
+            if (in_y) {
+                max_val.raw_y_lo = desc[i + 1];
+                max_val.raw_y_hi = desc[i + 2];
+
+                uint16_t value = desc[i + 1] | (desc[i + 2] << 8);
+                if (value > max_val.max_y) {
+                    max_val.max_y = value;
+                }
             }
         }
+
     }
 
-    ESP_LOGI(TAG, "Touchpad Size (RAW): X=%d Y=%d",
-             max_val.max_x, max_val.max_y);
+    ESP_LOGI(TAG,
+            "X: max=%d raw=[0x%02X 0x%02X], Y: max=%d raw=[0x%02X 0x%02X]",
+            max_val.max_x,
+            max_val.raw_x_lo, max_val.raw_x_hi,
+            max_val.max_y,
+            max_val.raw_y_lo, max_val.raw_y_hi);
 
     return max_val;
 }

@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "main.c"
+    SRCS "elan_hack.c" "main.c"
         "usb/usbhid.c"
         "usb/usb_descriptor.c"
         "i2c/elan_i2c.c"
