@@ -127,9 +127,9 @@ typedef struct __attribute__((packed)) {
 #define PTP_CONFIDENCE_BIT (1 << 0)
 #define PTP_TIP_SWITCH_BIT (1 << 1)
 
-#define RAW_X_MAX 3679
-#define RAW_Y_MAX 2261
-#define HID_MAX   4095
+// #define RAW_X_MAX 3679
+// #define RAW_Y_MAX 2261
+// #define HID_MAX   4095
 
 void usbhid_task(void *arg) {
     tp_multi_msg_t msg;
@@ -147,10 +147,12 @@ void usbhid_task(void *arg) {
             report.scan_time = (uint16_t)now;
             for (int i = 0; i < 5; i++) {
                 if (msg.fingers[i].tip_switch) {
-                    uint16_t tx = (msg.fingers[i].x * HID_MAX + RAW_X_MAX / 2) / RAW_X_MAX;
-                    uint16_t ty = (msg.fingers[i].y * HID_MAX + RAW_Y_MAX / 2) / RAW_Y_MAX;
-                    if (tx > HID_MAX) tx = HID_MAX;
-                    if (ty > HID_MAX) ty = HID_MAX;
+                    // uint16_t tx = (msg.fingers[i].x * HID_MAX + RAW_X_MAX / 2) / RAW_X_MAX;
+                    // uint16_t ty = (msg.fingers[i].y * HID_MAX + RAW_Y_MAX / 2) / RAW_Y_MAX;
+                    uint16_t tx = msg.fingers[i].x;
+                    uint16_t ty = msg.fingers[i].y;
+                    // if (tx > HID_MAX) tx = HID_MAX;
+                    // if (ty > HID_MAX) ty = HID_MAX;
                     uint8_t contact_id = i; 
 
                     report.fingers[i].tip_conf_id = PTP_CONFIDENCE_BIT | PTP_TIP_SWITCH_BIT | (contact_id << 2);
