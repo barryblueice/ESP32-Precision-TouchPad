@@ -30,7 +30,7 @@ static const char *TAG = "USB_HID_TP";
 #define TPD_REPORT_ID 0x01
 #define TPD_REPORT_SIZE_WITHOUT_ID (sizeof(touchpad_report_t) - 1)
 
-const float SENSITIVITY = 2.5f;
+const float SENSITIVITY = 3f;
 
 // USB Device Descriptor
 tusb_desc_device_t const desc_device = {
