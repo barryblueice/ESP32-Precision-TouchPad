@@ -46,12 +46,13 @@ https://github.com/user-attachments/assets/cb5ae0a1-41e6-4b15-b257-127867edca49
   - [x] Physical Buttons Support (left click & right click)
   - [x] Changing from freertos polling to GPIO interrupt
   - [x] Add a new HID port to support Mouse Mode compatibility.
-        (available for some old systems /BIOS that doesn't support PTP, like Windows 7)
+        (available for some old systems/BIOS that doesn't support PTP, like Windows 7)
 
 ***
 
 # About Solution Implementation
 
 Please go to [wiki page](https://github.com/barryblueice/ESP32-Precision-TouchPad/wiki) for further detail.
+
 
 
