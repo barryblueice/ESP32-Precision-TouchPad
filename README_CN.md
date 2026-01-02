@@ -7,7 +7,15 @@
 
 ### **硬件开源地址：[基于ESP32的Windows精确式触摸板](https://oshwhub.com/barryblueice/esp32-precision-touchpad)**
 
+#### **精确式触摸板模式演示：**
+
 https://github.com/user-attachments/assets/256ca4d0-b585-47dc-b8cc-44001de3028a
+
+#### **鼠标兼容模式演示：**
+
+https://github.com/user-attachments/assets/cb5ae0a1-41e6-4b15-b257-127867edca49
+
+#### **应用：**
 
 <img width="1194" height="970" alt="image" src="https://github.com/user-attachments/assets/35bba23a-5c70-4f4c-b9e3-434b141dd59f" />
 
@@ -45,3 +53,4 @@ https://github.com/user-attachments/assets/256ca4d0-b585-47dc-b8cc-44001de3028a
 # 关于方案实现：
 
 可前往[wiki page](https://github.com/barryblueice/ESP32-Precision-TouchPad/wiki)了解更多详细内容。
+
