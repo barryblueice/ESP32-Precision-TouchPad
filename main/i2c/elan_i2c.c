@@ -53,8 +53,6 @@ esp_err_t elan_activate_mouse() {
         0x05, 0x00,
         0x01, 0x00, 0x00        // Value: Enable Mouse Mode
     };
-
-    ESP_LOGI(TAG, "Requesting ELAN to return to Mouse Mode...");
     return i2c_master_transmit(dev_handle, payload, sizeof(payload), 200);
 }
 

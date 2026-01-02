@@ -171,7 +171,7 @@ void usbhid_task(void *arg) {
         QueueSetMemberHandle_t xActivatedMember = xQueueSelectFromSet(main_queue_set, portMAX_DELAY);
 
         if (xActivatedMember == mouse_queue) {
-            if (xQueueReceive(mouse_queue, &mouse_msg, pdMS_TO_TICKS(10))) {
+            if (xQueueReceive(mouse_queue, &mouse_msg, portMAX_DELAY)) {
                 mouse_hid_report_t report = {0};
 
                 int move_x = (int)(mouse_msg.x * SENSITIVITY);
@@ -195,7 +195,7 @@ void usbhid_task(void *arg) {
                 }
             }
         } else if (xActivatedMember == tp_queue) {
-            if (xQueueReceive(tp_queue, &msg, pdMS_TO_TICKS(10))) {
+            if (xQueueReceive(tp_queue, &msg, portMAX_DELAY)) {
                 ptp_report_t report = {0};
 
                 uint32_t now = esp_timer_get_time() / 100;
