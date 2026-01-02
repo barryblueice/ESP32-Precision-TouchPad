@@ -3,7 +3,6 @@
 
 void usbhid_task(void *arg);
 void usbhid_init(void);
-void usb_mount_task(void *arg);
 
 extern const uint8_t hid_report_descriptor[];
 extern const uint8_t desc_configuration[];

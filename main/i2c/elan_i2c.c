@@ -31,7 +31,7 @@ TaskHandle_t tp_read_task_handle = NULL;
 #define DOUBLE_TAP_WINDOW  50
 #define MULTI_TAP_JOIN_MS 30
 
-esp_err_t elan_activate_ptp() {
+static esp_err_t elan_activate_ptp() {
     uint8_t payload[] = {
         0x05, 0x00,             // Command Register
         0x33, 0x03,             // SET_REPORT Feature ID 03
@@ -39,19 +39,7 @@ esp_err_t elan_activate_ptp() {
         0x05, 0x00,             // Usage Page: Digitizer
         0x03, 0x03, 0x00        // Value: Enable PTP Mode
     };
-    return i2c_master_transmit(dev_handle, payload, sizeof(payload), 200);
-}
-
-esp_err_t elan_activate_mouse() {
-    uint8_t payload[] = {
-        0x05, 0x00,
-        0x33, 0x03,
-        0x06, 0x00,
-        0x05, 0x00,
-        0x01, 0x00, 0x00        // Value: Enable Mouse Mode
-    };
-
-    ESP_LOGI(TAG, "Requesting ELAN to return to Mouse Mode...");
+    ESP_LOGI(TAG, "Activating PTP Mode...");
     return i2c_master_transmit(dev_handle, payload, sizeof(payload), 200);
 }
 
@@ -66,7 +54,7 @@ typedef struct {
     bool nibble_packed;
 } finger_layout_t;
 
-void elan_i2c_init(void) {
+static void elan_i2c_init(void) {
     gpio_set_direction(RST_IO, GPIO_MODE_OUTPUT);
     gpio_set_level(RST_IO, 0);
     vTaskDelay(pdMS_TO_TICKS(50));
@@ -93,10 +81,55 @@ void elan_i2c_init(void) {
     uint8_t pwr_on[] = {0x05, 0x00, 0x08, 0x00};
     i2c_master_transmit(dev_handle, pwr_on, 4, 100);
     vTaskDelay(pdMS_TO_TICKS(20));
+
+    elan_activate_ptp();
     vTaskDelay(pdMS_TO_TICKS(100));
 
     gpio_set_direction(INT_IO, GPIO_MODE_INPUT);
     gpio_set_pull_mode(INT_IO, GPIO_PULLUP_ONLY);
+}
+
+// PTP 数据解析 (Tip/ID/XY)
+static void parse_ptp_report(uint8_t *data, int len, finger_layout_t layout, tp_multi_msg_t *msg_out)  {
+    uint8_t report_id = data[2];
+    if (report_id != 0x04) return;
+
+    uint8_t status = data[3];
+    uint8_t contact_id = (status & 0xF0) >> 4;
+    bool tip = (status & 0x01);
+    uint16_t raw_x = data[4] | (data[5] << 8);
+    uint16_t raw_y = data[6] | (data[7] << 8);
+    
+    bool physical_pressed = (data[11] == 0x81);
+    static uint8_t locked_button = 0;
+    static bool is_detecting_click = false;
+
+    if (physical_pressed) {
+        if (!is_detecting_click) {
+            is_detecting_click = true;
+            locked_button = (raw_x > 1700) ? 0x02 : 0x01;
+        }
+        msg_out->button_mask = locked_button;
+    } else {
+        is_detecting_click = false;
+        locked_button = 0;
+        msg_out->button_mask = 0;
+    }
+
+    if (contact_id < 5) {
+        msg_out->fingers[contact_id].x = raw_x;
+        msg_out->fingers[contact_id].y = raw_y;
+        msg_out->fingers[contact_id].tip_switch = tip ? 1 : 0;
+        msg_out->fingers[contact_id].contact_id = contact_id;
+    }
+
+    uint8_t count = 0;
+    for (int i = 0; i < 5; i++) {
+        if (msg_out->fingers[i].tip_switch) {
+            count++;
+        }
+    }
+    msg_out->actual_count = count;
 }
 
 #define TAP_DEADZONE 30
@@ -114,6 +147,8 @@ typedef enum {
 
 
 void elan_i2c_task(void *arg) {
+    elan_i2c_init();
+    tp_interrupt_init();
 
     static uint16_t last_raw_x[5] = {0};
     static uint16_t last_raw_y[5] = {0};
@@ -147,8 +182,6 @@ void elan_i2c_task(void *arg) {
         while (gpio_get_level(INT_IO) == 0 && safety-- > 0) {
             if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(5)) == ESP_OK) {
                 current_state.button_mask = (data[11] & 0x01) ? 0x01 : 0x00;
-
-                // ESP_LOG_BUFFER_HEX(TAG, data, 12);
 
                 if (data[2] == 0x04) {
                     uint8_t status = data[3];
