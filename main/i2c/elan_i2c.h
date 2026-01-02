@@ -17,6 +17,12 @@ typedef struct {
     uint8_t button_mask;
 } tp_multi_msg_t;
 
+typedef struct __attribute__((packed)) {
+    uint8_t buttons;
+    int8_t  x;
+    int8_t  y;
+} mouse_msg_t;
+
 typedef struct {
     bool active;
     uint32_t down_time;
@@ -27,6 +33,15 @@ typedef struct {
 } tp_finger_life_t;
 
 extern QueueHandle_t tp_queue;
+extern QueueHandle_t mouse_queue;
+extern QueueSetHandle_t main_queue_set;
+
+typedef enum {
+    MOUSE_MODE = 0,
+    PTP_MODE = 1
+} input_mode_t;
+
+extern volatile uint8_t current_mode;
 
 void elan_i2c_task(void *arg);
 void tp_interrupt_init(void);

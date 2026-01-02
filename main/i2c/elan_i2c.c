@@ -16,6 +16,9 @@
 static const char *TAG = "ELAN_PTP";
 
 QueueHandle_t tp_queue = NULL;
+QueueHandle_t mouse_queue = NULL;
+QueueSetHandle_t main_queue_set = NULL;
+volatile uint8_t current_mode = MOUSE_MODE;
 
 #define I2C_ADDR 0x15
 #define RST_IO   6
@@ -123,7 +126,6 @@ void elan_i2c_task(void *arg) {
     static int64_t first_touch_time = 0;
     static bool tap_frozen[5] = {false};
     static touch_state_t touch_state[5] = {0};
-    static int64_t touch_start_time[5] = {0};
     
     uint8_t data[64];
     const uint16_t JUMP_THRESHOLD = 800;
@@ -132,7 +134,8 @@ void elan_i2c_task(void *arg) {
     while (1) {
         ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1)); 
 
-        tp_multi_msg_t current_state = {0}; 
+        tp_multi_msg_t tp_current_state = {0}; 
+        mouse_msg_t mouse_current_state = {0};
         bool has_data = false;
         int64_t now = esp_timer_get_time() / 1000;
 
@@ -146,11 +149,14 @@ void elan_i2c_task(void *arg) {
         int safety = 10;
         while (gpio_get_level(INT_IO) == 0 && safety-- > 0) {
             if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(5)) == ESP_OK) {
-                current_state.button_mask = (data[11] & 0x01) ? 0x01 : 0x00;
+                tp_current_state.button_mask = (data[11] & 0x01) ? 0x01 : 0x00;
 
                 // ESP_LOG_BUFFER_HEX(TAG, data, 12);
 
                 if (data[2] == 0x04) {
+
+                    current_mode = PTP_MODE;
+
                     uint8_t status = data[3];
                     uint8_t id = (status & 0xF0) >> 4;
                     
@@ -162,7 +168,6 @@ void elan_i2c_task(void *arg) {
                         if (tip && rx > 0 && ry > 0) {
                             if (last_raw_x[id] == 0) {
                                 touch_state[id] = TOUCH_TAP_CANDIDATE;
-                                touch_start_time[id] = now;
                                 if (first_touch_time != 0 && (now - first_touch_time) < MULTI_TAP_JOIN_MS) {
                                     origin_x[id] = rx;
                                     origin_y[id] = ry;
@@ -221,12 +226,12 @@ void elan_i2c_task(void *arg) {
                                     filtered_x[id] = origin_x[id];
                                     filtered_y[id] = origin_y[id];
                                 }
-                                current_state.fingers[id].x = origin_x[id];
-                                current_state.fingers[id].y = origin_y[id];
+                                tp_current_state.fingers[id].x = origin_x[id];
+                                tp_current_state.fingers[id].y = origin_y[id];
                             } else {
                                 tap_frozen[id] = false;
-                                current_state.fingers[id].x = fx;
-                                current_state.fingers[id].y = fy;
+                                tp_current_state.fingers[id].x = fx;
+                                tp_current_state.fingers[id].y = fy;
                             }
 
                             int sum_x = 0, sum_y = 0, count = 0;
@@ -250,15 +255,15 @@ void elan_i2c_task(void *arg) {
 
                             if (!tap_frozen[id]) {
                                 if (last_raw_x[id] != 0 && abs((int)rx - (int)last_raw_x[id]) > JUMP_THRESHOLD) {
-                                    current_state.fingers[id].x = last_raw_x[id];
-                                    current_state.fingers[id].y = last_raw_y[id];
+                                    tp_current_state.fingers[id].x = last_raw_x[id];
+                                    tp_current_state.fingers[id].y = last_raw_y[id];
                                 }
                             }
 
                             last_raw_x[id] = rx;
                             last_raw_y[id] = ry;
-                            current_state.fingers[id].tip_switch = 1;
-                            current_state.fingers[id].contact_id = id;
+                            tp_current_state.fingers[id].tip_switch = 1;
+                            tp_current_state.fingers[id].contact_id = id;
                             has_data = true;
                         } else {
                             last_raw_x[id] = 0;
@@ -269,27 +274,43 @@ void elan_i2c_task(void *arg) {
                             filtered_y[id] = 0;
                             tap_frozen[id] = false;
                             touch_state[id] = TOUCH_IDLE;
-                            current_state.fingers[id].tip_switch = 0;
+                            tp_current_state.fingers[id].tip_switch = 0;
                             has_data = true;
                         }
                     }
+                } else if (data[2] == 0x01) {
+
+                    current_mode = MOUSE_MODE;
+
+                    // ESP_LOG_BUFFER_HEX(TAG, data, sizeof(data));
+
+                    // ESP_LOGI(TAG, "X: %d, y:%d",(int8_t)data[4], (int8_t)data[5]);
+
+                    mouse_current_state.x = (int8_t)data[4];
+                    mouse_current_state.y = (int8_t)data[5];
+
+                    mouse_current_state.buttons = data[3];
                 } else {
                     break;
                 }
             }
         }
 
-        if (has_data || current_state.button_mask) {
-            uint8_t active_count = 0;
-            for (int i = 0; i < 5; i++) {
-                if (current_state.fingers[i].tip_switch) active_count++;
+        if (current_mode == PTP_MODE) {
+            if (has_data || tp_current_state.button_mask) {
+                uint8_t active_count = 0;
+                for (int i = 0; i < 5; i++) {
+                    if (tp_current_state.fingers[i].tip_switch) active_count++;
+                }
+                tp_current_state.actual_count = active_count;
+
+                if (active_count == 0) first_touch_time = 0;
+
+                last_report_time = now;
+                xQueueOverwrite(tp_queue, &tp_current_state);
             }
-            current_state.actual_count = active_count;
-
-            if (active_count == 0) first_touch_time = 0;
-
-            last_report_time = now;
-            xQueueOverwrite(tp_queue, &current_state);
+        } else if (current_mode == MOUSE_MODE) {
+            xQueueOverwrite(mouse_queue, &mouse_current_state);
         }
     }
 }

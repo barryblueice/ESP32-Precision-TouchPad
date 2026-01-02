@@ -11,7 +11,45 @@
 #define REPORTID_FEATURE          0x05  // Input Mode
 #define REPORTID_FUNCTION_SWITCH  0x06
 
-const uint8_t hid_report_descriptor[] = {
+#define EPNUM_TP_IN    0x81
+#define EPNUM_MOUSE_IN 0x82
+
+#define CONFIG_TOTAL_LEN  (TUD_CONFIG_DESC_LEN + 2 * TUD_HID_DESC_LEN)
+
+const uint8_t mouse_hid_report_descriptor[] = {
+
+    0x05, 0x01,                         // USAGE_PAGE (Generic Desktop)
+    0x09, 0x02,                         // USAGE (Mouse)
+    0xa1, 0x01,                         // COLLECTION (Application)
+    0x85, REPORTID_MOUSE,               // REPORT_ID
+    0x09, 0x01,                         // USAGE (Pointer)
+    0xa1, 0x00,  
+
+    0x05, 0x09,                         // USAGE_PAGE (Button)
+    0x19, 0x01,                         // USAGE_MINIMUM (Button 1)
+        0x29, 0x03,                     // USAGE_MAXIMUM (Button 3)
+        0x15, 0x00,                     // LOGICAL_MINIMUM (0)
+        0x25, 0x01,                     // LOGICAL_MAXIMUM (1)
+        0x75, 0x01,                     // REPORT_SIZE (1)
+        0x95, 0x03,                     // REPORT_COUNT (3)
+        0x81, 0x02,                     // INPUT (Data,Var,Abs)
+        0x95, 0x05,                     // REPORT_COUNT (5)
+        0x81, 0x03,                     // INPUT (Cnst,Var,Abs)
+
+        0x05, 0x01,                     // USAGE_PAGE (Generic Desktop)
+        0x09, 0x30,                     // USAGE (X)
+        0x09, 0x31,                     // USAGE (Y)
+        0x15, 0x81,                     // LOGICAL_MINIMUM (-127)
+        0x25, 0x7f,                     // LOGICAL_MAXIMUM (127)
+        0x75, 0x08,                     // REPORT_SIZE (8)
+        0x95, 0x02,                     // REPORT_COUNT (2)
+        0x81, 0x06,                     // INPUT (Data,Var,Rel)
+    0xC0,                               // END_COLLECTION (Physical)
+    0xC0,                               // END_COLLECTION (Application)
+
+};
+
+const uint8_t ptp_hid_report_descriptor[] = {
 //TOUCH PAD input TLC
     0x05, 0x0d,                         // USAGE_PAGE (Digitizers)
     0x09, 0x05,                         // USAGE (Touch Pad)
@@ -274,41 +312,26 @@ const uint8_t hid_report_descriptor[] = {
     0xb1, 0x03,                         // FEATURE (Cnst,Var,Abs)
     0xc0,                               // END_COLLECTION
     0xc0,                               // END_COLLECTION
-    //MOUSE TLC
-    0x05, 0x01,                         // USAGE_PAGE (Generic Desktop)
-    0x09, 0x02,                         // USAGE (Mouse)
-    0xa1, 0x01,                         // COLLECTION (Application)
-    0x85, REPORTID_MOUSE,               // REPORT_ID (Mouse)
-    0x09, 0x01,                         // USAGE (Pointer)
-    0xa1, 0x00,                         // COLLECTION (Physical)
-    0x05, 0x09,                         // USAGE_PAGE (Button)
-    0x19, 0x01,                         // USAGE_MINIMUM (Button 1)
-    0x29, 0x02,                         // USAGE_MAXIMUM (Button 2)
-    0x25, 0x01,                         // LOGICAL_MAXIMUM (1)
-    0x75, 0x01,                         // REPORT_SIZE (1)
-    0x95, 0x02,                         // REPORT_COUNT (2)
-    0x81, 0x02,                         // INPUT (Data,Var,Abs)
-    0x95, 0x06,                         // REPORT_COUNT (6)
-    0x81, 0x03,                         // INPUT (Cnst,Var,Abs)
-    0x05, 0x01,                         // USAGE_PAGE (Generic Desktop)
-    0x09, 0x30,                         // USAGE (X)
-    0x09, 0x31,                         // USAGE (Y)
-    0x75, 0x10,                         // REPORT_SIZE (16)
-    0x95, 0x02,                         // REPORT_COUNT (2)
-    0x25, 0x0a,                         // LOGICAL_MAXIMUM (10)
-    0x81, 0x06,                         // INPUT (Data,Var,Rel)
-    0xc0,                               // END_COLLECTION
-    0xc0,                               // END_COLLECTION
 };
 
-enum {
-    ITF_NUM_HID,
-    ITF_NUM_TOTAL
-};
+
+// enum {
+//     ITF_NUM_HID,
+//     ITF_NUM_TOTAL
+// };
+
+// uint8_t const mouse_desc_configuration[] = {
+//     TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, TUD_CONFIG_DESC_LEN + TUD_HID_DESC_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+//     TUD_HID_DESCRIPTOR(ITF_NUM_HID, 4, HID_ITF_PROTOCOL_NONE, sizeof(mouse_hid_report_descriptor), 0x81, 64, 1)
+// };
+
+// uint8_t const ptp_desc_configuration[] = {
+//     TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, TUD_CONFIG_DESC_LEN + TUD_HID_DESC_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+//     TUD_HID_DESCRIPTOR(ITF_NUM_HID, 4, HID_ITF_PROTOCOL_NONE, sizeof(ptp_hid_report_descriptor), 0x81, 64, 1)
+// };
 
 uint8_t const desc_configuration[] = {
-    TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, TUD_CONFIG_DESC_LEN + TUD_HID_DESC_LEN,
-                          TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
-    TUD_HID_DESCRIPTOR(ITF_NUM_HID, 4, HID_ITF_PROTOCOL_NONE,
-                       sizeof(hid_report_descriptor), 0x81, 64, 1)
+    TUD_CONFIG_DESCRIPTOR(1, 2, 0, CONFIG_TOTAL_LEN, 0x00, 100),
+    TUD_HID_DESCRIPTOR(0, 0, HID_ITF_PROTOCOL_NONE, sizeof(ptp_hid_report_descriptor), EPNUM_TP_IN, 64, 10),
+    TUD_HID_DESCRIPTOR(1, 0, HID_ITF_PROTOCOL_MOUSE, sizeof(mouse_hid_report_descriptor), EPNUM_MOUSE_IN, 8, 10)
 };
