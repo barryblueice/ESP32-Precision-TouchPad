@@ -131,11 +131,41 @@ typedef struct __attribute__((packed)) {
 // #define RAW_Y_MAX 2261
 // #define HID_MAX   4095
 
+static uint8_t last_ptp_input_mode = 0xFF;
+
+void usb_mount_task(void *arg) {
+    while (1) {
+        if (!tud_mounted()) {
+            ptp_input_mode = 0x00;
+            gpio_set_level(GPIO_NUM_9, 0x00);
+            vTaskDelay(100);
+            gpio_set_level(GPIO_NUM_9, 0x01);
+        } 
+        if (ptp_input_mode != last_ptp_input_mode) {
+            switch (ptp_input_mode) {
+            case 0x03:
+                ESP_LOGI(TAG, "Mode 0x03 detected: Activating ELAN PTP");
+                elan_activate_ptp();
+                break;
+            case 0x00:
+                ESP_LOGI(TAG, "Mode 0x01 detected: Activating ELAN MOUSE");
+                elan_activate_mouse();
+                break;
+            default:
+                break;
+            }
+            last_ptp_input_mode = ptp_input_mode;
+        }
+        vTaskDelay(100);
+    }
+}
+
 void usbhid_task(void *arg) {
     tp_multi_msg_t msg;
     static uint16_t last_scan_time = 0;
 
     while (1) {
+
         if (xQueueReceive(tp_queue, &msg, portMAX_DELAY)) {
             ptp_report_t report = {0};
 
