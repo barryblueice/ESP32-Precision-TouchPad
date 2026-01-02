@@ -7,7 +7,13 @@ Also include a HP fingerprint module, in order to support fingerprint for Window
 
 ### **Hardware OpenSource Link：[ESP32-Precision-TouchPad](https://oshwhub.com/barryblueice/esp32-precision-touchpad)**
 
+#### **PTP Mode Demonstration**:
+
 https://github.com/user-attachments/assets/256ca4d0-b585-47dc-b8cc-44001de3028a
+
+#### **Mouse Mode Demonstration**:
+
+https://github.com/user-attachments/assets/cb5ae0a1-41e6-4b15-b257-127867edca49
 
 <img width="1194" height="970" alt="image" src="https://github.com/user-attachments/assets/35bba23a-5c70-4f4c-b9e3-434b141dd59f" />
 
@@ -45,3 +51,4 @@ https://github.com/user-attachments/assets/256ca4d0-b585-47dc-b8cc-44001de3028a
 # About Solution Implementation
 
 Please go to [wiki page](https://github.com/barryblueice/ESP32-Precision-TouchPad/wiki) for further detail.
+
