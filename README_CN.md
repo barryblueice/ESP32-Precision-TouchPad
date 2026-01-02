@@ -37,7 +37,8 @@ https://github.com/user-attachments/assets/256ca4d0-b585-47dc-b8cc-44001de3028a
     - [x] 多指Tap支持（小概率可能触发不成功）
   - [x] 物理按键支持（左键 & 右键）
   - [x] 由freertos轮询切换到GPIO Int中断触发
-  - [ ] 在鼠标模式和精确式触摸板模式中自动切换
+  - [x] 添加新的HID端口以支持Mouse Mode兼容
+        （对于部分不支持PTP的老系统/BIOS可用，例如Windows7）
 
 ***
 

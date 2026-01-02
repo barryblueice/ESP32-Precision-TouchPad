@@ -37,7 +37,8 @@ https://github.com/user-attachments/assets/256ca4d0-b585-47dc-b8cc-44001de3028a
     - [x] Multi Tap Support (It might fail to trigger occasionally)
   - [x] Physical Buttons Support (left click & right click)
   - [x] Changing from freertos polling to GPIO interrupt
-  - [ ] Auto-Switching between Mouse Mode & PTP Mode
+  - [ ] Add a new HID port to support Mouse Mode compatibility.
+        (available for some old systems /BIOS that doesn't support PTP, like Windows 7)
 
 ***
 
