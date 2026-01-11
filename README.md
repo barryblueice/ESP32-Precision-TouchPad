@@ -55,6 +55,13 @@ https://github.com/user-attachments/assets/cb5ae0a1-41e6-4b15-b257-127867edca49
  - Two fingers tap (equal to right click) can only trigger on laptop.
  - Multi-Port HID compatibility design may not support on some old system, like Windows XP.
 
+# Current Support System (already tested):
+
+ - Windows 7 (Mouse Mode), Windows 10/11 (PTP Mode);
+ - Ubuntu 22.04 or newer (PTP Mode);
+ - Oxygen OS 17 (based on Android 16) on PHK110 (PTP Mode);
+ - HP / MSI BIOS (Mouse Mode)
+
 ***
 
 # About Solution Implementation

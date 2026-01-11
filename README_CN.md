@@ -50,10 +50,17 @@ https://github.com/user-attachments/assets/cb5ae0a1-41e6-4b15-b257-127867edca49
 
 ***
 
-目前仍然存在的问题：
+# 目前仍然存在的问题：
 
  - 双指轻触（相当于鼠标右键单击）只能在笔记本平台上触发。
  - 为兼容而设计的HID多端口方案在部分老系统上可能无法使用，例如Windows7。
+
+# 目前支持的系统（已经过测试）：
+
+ - Windows 7 （鼠标模式），Windows 10/11（精确式触摸板模式）；
+ - Ubuntu 22.04及更新版本系统；
+ - Color OS 17 （基于Android 16），测试设备为一加Ace2（精确式触摸板模式）；
+ - HP / MSI BIOS（鼠标模式）
 
 ***
 
