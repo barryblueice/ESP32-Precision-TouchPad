@@ -50,6 +50,13 @@ https://github.com/user-attachments/assets/cb5ae0a1-41e6-4b15-b257-127867edca49
 
 ***
 
+# Current Issues:
+
+ - Two fingers tap (equal to right click) can only trigger on laptop.
+ - Multi-Port HID compatibility design may not support on some old system, like Windows XP.
+
+***
+
 # About Solution Implementation
 
 Please go to [wiki page](https://github.com/barryblueice/ESP32-Precision-TouchPad/wiki) for further detail.

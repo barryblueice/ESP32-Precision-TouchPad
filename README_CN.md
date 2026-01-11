@@ -50,6 +50,13 @@ https://github.com/user-attachments/assets/cb5ae0a1-41e6-4b15-b257-127867edca49
 
 ***
 
+目前仍然存在的问题：
+
+ - 双指轻触（相当于鼠标右键单击）只能在笔记本平台上触发。
+ - 为兼容而设计的HID多端口方案在部分老系统上可能无法使用，例如Windows7。
+
+***
+
 # 关于方案实现：
 
 可前往[wiki page](https://github.com/barryblueice/ESP32-Precision-TouchPad/wiki)了解更多详细内容。
