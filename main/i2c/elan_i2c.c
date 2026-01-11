@@ -264,15 +264,21 @@ void elan_i2c_task(void *arg) {
                             tp_current_state.fingers[id].contact_id = id;
                             has_data = true;
                         } else {
+                            
+                            tp_current_state.fingers[id].tip_switch = 0;
+    
+                            tp_current_state.fingers[id].x = last_raw_x[id]; 
+                            tp_current_state.fingers[id].y = last_raw_y[id];
+
                             last_raw_x[id] = 0;
                             last_raw_y[id] = 0;
                             origin_x[id] = 0;
                             origin_y[id] = 0;
                             filtered_x[id] = 0;
                             filtered_y[id] = 0;
+                            
                             tap_frozen[id] = false;
                             touch_state[id] = TOUCH_IDLE;
-                            tp_current_state.fingers[id].tip_switch = 0;
                             has_data = true;
                         }
                     }
