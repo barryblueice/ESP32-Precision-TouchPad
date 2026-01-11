@@ -15,6 +15,10 @@ https://github.com/user-attachments/assets/256ca4d0-b585-47dc-b8cc-44001de3028a
 
 https://github.com/user-attachments/assets/cb5ae0a1-41e6-4b15-b257-127867edca49
 
+#### **Android Demonstration**:
+
+https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
+
 #### **Application:**
 
 <img width="1194" height="970" alt="image" src="https://github.com/user-attachments/assets/35bba23a-5c70-4f4c-b9e3-434b141dd59f" />
@@ -67,6 +71,7 @@ https://github.com/user-attachments/assets/cb5ae0a1-41e6-4b15-b257-127867edca49
 # About Solution Implementation
 
 Please go to [wiki page](https://github.com/barryblueice/ESP32-Precision-TouchPad/wiki) for further detail.
+
 
 
 
