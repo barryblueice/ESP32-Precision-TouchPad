@@ -50,7 +50,7 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
   - [x] Physical Buttons Support (left click & right click)
   - [x] Changing from freertos polling to GPIO interrupt
   - [x] Add a new HID port to support Mouse Mode compatibility.
-        (available for some old systems/BIOS that doesn't support PTP, like Windows 7)
+        (available for some old systems/BIOS that doesn't support PTP, like Windows XP)
 
 ***
 
