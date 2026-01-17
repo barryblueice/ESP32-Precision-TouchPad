@@ -159,9 +159,10 @@ void elan_i2c_task(void *arg) {
                     uint8_t id = (status & 0xF0) >> 4;
                     
                     if (id < 5) {
+                        uint8_t status = data[3];
                         bool tip = (status & 0x01);
-                        bool confidence = (status & 0x02);
-                        bool is_valid_touch = tip && confidence;
+                        bool confidence = (status & 0x02); 
+                        bool is_valid_touch = tip && confidence; 
 
                         uint16_t rx = data[4] | (data[5] << 8);
                         uint16_t ry = data[6] | (data[7] << 8);
@@ -175,11 +176,18 @@ void elan_i2c_task(void *arg) {
                                 filtered_y[id] = (float)ry;
                                 if (first_touch_time == 0) first_touch_time = now;
                             } else {
+                                int dx_raw = rx - last_raw_x[id];
+                                int dy_raw = ry - last_raw_y[id];
+                                if (abs(dx_raw) > abs(dy_raw) * 2 && abs(dy_raw) < 6) {
+                                    ry = last_raw_y[id];
+                                } else if (abs(dy_raw) > abs(dx_raw) * 2 && abs(dx_raw) < 6) {
+                                    rx = last_raw_x[id];
+                                }
+
                                 int vx = rx - last_raw_x[id];
                                 int vy = ry - last_raw_y[id];
                                 int alpha_speed = abs(vx) + abs(vy);
                                 float dynamic_alpha = (alpha_speed < 3) ? 0.25f : (alpha_speed < 12 ? 0.45f : 0.85f);
-                                
                                 filtered_x[id] = dynamic_alpha * rx + (1.0f - dynamic_alpha) * filtered_x[id];
                                 filtered_y[id] = dynamic_alpha * ry + (1.0f - dynamic_alpha) * filtered_y[id];
                             }
@@ -189,12 +197,13 @@ void elan_i2c_task(void *arg) {
 
                             int dx = abs((int)rx - (int)origin_x[id]);
                             int dy = abs((int)ry - (int)origin_y[id]);
+
                             if (touch_state[id] == TOUCH_TAP_CANDIDATE && (dx > TAP_DEADZONE || dy > TAP_DEADZONE)) {
                                 touch_state[id] = TOUCH_DRAG;
                                 tap_frozen[id] = false;
                             }
 
-                            if (touch_state[id] == TOUCH_TAP_CANDIDATE) {
+                            if (touch_state[id] == TOUCH_TAP_CANDIDATE && dx < TAP_DEADZONE && dy < TAP_DEADZONE) {
                                 if (!tap_frozen[id]) {
                                     tap_frozen[id] = true;
                                     filtered_x[id] = origin_x[id];
@@ -206,6 +215,25 @@ void elan_i2c_task(void *arg) {
                                 tap_frozen[id] = false;
                                 tp_current_state.fingers[id].x = fx;
                                 tp_current_state.fingers[id].y = fy;
+                            }
+
+                            int sum_x = 0, sum_y = 0, count = 0;
+                            for (int i = 0; i < 5; i++) {
+                                if (tap_frozen[i]) {
+                                    sum_x += origin_x[i];
+                                    sum_y += origin_y[i];
+                                    count++;
+                                }
+                            }
+                            if (count > 1) {
+                                int avg_x = sum_x / count;
+                                int avg_y = sum_y / count;
+                                for (int j = 0; j < 5; j++) {
+                                    if (tap_frozen[j]) {
+                                        origin_x[j] = avg_x;
+                                        origin_y[j] = avg_y;
+                                    }
+                                }
                             }
 
                             if (!tap_frozen[id] && last_raw_x[id] != 0 && abs((int)rx - (int)last_raw_x[id]) > JUMP_THRESHOLD) {
@@ -224,17 +252,13 @@ void elan_i2c_task(void *arg) {
                             tp_current_state.fingers[id].x = last_raw_x[id]; 
                             tp_current_state.fingers[id].y = last_raw_y[id];
 
-                            last_raw_x[id] = 0;
-                            last_raw_y[id] = 0;
-                            origin_x[id] = 0;
-                            origin_y[id] = 0;
-                            filtered_x[id] = 0;
-                            filtered_y[id] = 0;
+                            last_raw_x[id] = 0; last_raw_y[id] = 0;
+                            origin_x[id] = 0; origin_y[id] = 0;
+                            filtered_x[id] = 0; filtered_y[id] = 0;
                             tap_frozen[id] = false;
                             touch_state[id] = TOUCH_IDLE;
-                            has_data = true; 
+                            has_data = true;
                         }
-
                     } else if (data[2] == 0x01) {
 
                         current_mode = MOUSE_MODE;
