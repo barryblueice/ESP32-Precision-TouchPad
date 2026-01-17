@@ -58,6 +58,7 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
 
  - 双指轻触（相当于鼠标右键单击）只能在笔记本平台上触发。
  - 为兼容而设计的HID多端口方案在部分老系统上可能无法使用，例如Windows7。
+ - 不能快速连续单击。
 
 # 目前支持的系统（已经过测试）：
 

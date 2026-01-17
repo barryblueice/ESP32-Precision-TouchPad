@@ -58,6 +58,7 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
 
  - Two fingers tap (equal to right click) can only trigger on laptop.
  - Multi-Port HID compatibility design may not support on some old system, like Windows XP.
+ - Cannot perform rapid and consecutive clicks.
 
 # Current Support System (already tested):
 
