@@ -1,6 +1,8 @@
+[English](https://github.com/barryblueice/ESP32-Precision-TouchPad/blob/main/3D%20Model/README.md) | [Simplified Chinese](https://github.com/barryblueice/ESP32-Precision-TouchPad/blob/main/3D%20Model/README_CN.md)
+
 ## **About Appearance Design:**
 
-All model were modeling by `SOLIDWORKS 2024`.<br>`3D_PCB1_2026-01-18.step` and `指纹模块固定板.step` were exported from EasyEDA.
+All model were modeling by `SOLIDWORKS 2024`.<br>`3D_PCB1_2026-01-18.step` and `指纹模块固定板.step` were exported from EasyEDA Pro Edition.
 
 ***
 
@@ -11,7 +13,7 @@ All model were modeling by `SOLIDWORKS 2024`.<br>`3D_PCB1_2026-01-18.step` and `
  - `3D_PCB1_2026-01-18.step` is an example model of TouchPad Main PCB.
  - `外壳.SLDPRT` / `外壳.STEP` is the shell of TouchPad, `底壳.SLDPRT` is the base of shell.
  - `指纹模块固定板.step` is a PCB that fixed the fingerprint module when installed on shell.
- - `总装.SLDASM` is  the theoretical assembly and renderings of the finished product.
+ - `总装.SLDASM` is the theoretical assembly and renderings of the finished product.
 
 ## **3D rendering image:**
 
