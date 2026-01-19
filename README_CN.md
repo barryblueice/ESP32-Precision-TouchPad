@@ -19,11 +19,31 @@ https://github.com/user-attachments/assets/cb5ae0a1-41e6-4b15-b257-127867edca49
 
 https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
 
-#### **应用：**
+#### **应用:**
 
-<img width="1194" height="970" alt="image" src="https://github.com/user-attachments/assets/35bba23a-5c70-4f4c-b9e3-434b141dd59f" />
+ - **触摸板主PCB:**
 
-<img width="826" height="823" alt="image" src="https://github.com/user-attachments/assets/ca5a84f5-3594-45f0-bfe8-55217592828e" />
+<img width="900" height="667" alt="image" src="https://github.com/user-attachments/assets/a25d1b9c-eece-432a-9ca9-677dc87e56ad" />
+
+<img width="900" height="623" alt="image" src="https://github.com/user-attachments/assets/813ec446-ebc3-422f-ba02-ab4217bdd4ef" />
+
+ - **2.4G接收器:**
+
+<img width="900" height="517" alt="image" src="https://github.com/user-attachments/assets/2af38202-edb0-4c51-ac50-329084c07bd0" />
+
+<img width="900" height="504" alt="image" src="https://github.com/user-attachments/assets/e1ca4a4e-5156-40c2-ac76-7019ce21d6cf" />
+
+ - **外观设计 (SOLIDWORKS建模):**
+
+<img width="900" height="506" alt="image" src="https://github.com/user-attachments/assets/c6dd642c-a9fa-4fb4-aafb-7b3156789653" />
+
+<img width="900" height="506" alt="image" src="https://github.com/user-attachments/assets/57d47a7b-a472-4caa-8c2d-d9be049833bf" />
+
+<img width="900" height="506" alt="image" src="https://github.com/user-attachments/assets/28aea2f9-f43a-4217-a47e-e8b8bca49d43" />
+
+ - **系统应用::**
+
+<img width="501" height="500" alt="image" src="https://github.com/user-attachments/assets/ca5a84f5-3594-45f0-bfe8-55217592828e" />
 
 <img width="536" height="182" alt="image" src="https://github.com/user-attachments/assets/9c88e2ca-030a-46b5-9981-c7615a9c184d" />
 
