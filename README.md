@@ -1,4 +1,4 @@
-[English](https://github.com/barryblueice/ESP32-Precision-TouchPad/blob/main/README.md) | [Simplified Chineses](https://github.com/barryblueice/ESP32-Precision-TouchPad/blob/main/README_CN.md)
+[English](https://github.com/barryblueice/ESP32-Precision-TouchPad/blob/main/README.md) | [Simplified Chinese](https://github.com/barryblueice/ESP32-Precision-TouchPad/blob/main/README_CN.md)
 
 # **What's This?**
 

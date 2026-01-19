@@ -204,6 +204,7 @@ void usbhid_task(void *arg) {
                 }
                 last_scan_time = now;
                 report.scan_time = (uint16_t)now;
+                
                 for (int i = 0; i < 5; i++) {
                     if (msg.fingers[i].tip_switch) {
                         // uint16_t tx = (msg.fingers[i].x * HID_MAX + RAW_X_MAX / 2) / RAW_X_MAX;
