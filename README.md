@@ -56,8 +56,8 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
   - [x] Appearance Design (Modeling by using SOLIDWORKS)
   - [x] Adding battery to support 2.4G wireless (Fingerprint module is unavailable during 2.4G wireless state)
   - [x] Adding battery to support wireless Bluetooth (Fingerprint module is unavailable during bluetooth wireless state)
-  - ~~ [ ] Adding ThinkPad TrackPoint Mouse Pointer~~ (There are no current plans for this function update)
-  - ~~ [ ] Adding specific function button~~ (There are no current plans for this function update)
+  - [ ] ~~Adding ThinkPad TrackPoint Mouse Pointer~~ (There are no current plans for this function update)
+  - [ ] ~~Adding specific function button~~ (There are no current plans for this function update)
 
   ## Software:
   - [x] Recognized as a Microsoft Percision TouchPad
@@ -104,3 +104,4 @@ Please go to [wiki page](https://github.com/barryblueice/ESP32-Precision-TouchPa
 ~~ # Related derivative projects:~~
 
  - ~~Still in development progress ~~
+
