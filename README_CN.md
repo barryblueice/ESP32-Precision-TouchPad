@@ -33,10 +33,11 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
   ## Hardware:
   - [x] PCB设计
   - [x] 材料选型
-  - [ ] 外壳设计 (SOLIDWORKS建模)
-  - [ ] 为后续的蓝牙支持添加电池（蓝牙无线模式下指纹模块不可用）
-  - [ ] 添加ThinkPad TrackPoint小红点
-  - [ ] 添加特殊定义微动按钮
+  - [x] 外壳设计 (SOLIDWORKS建模)
+  - [x] 为后续的2.4G无线支持添加电池（2.4G无线模式下指纹模块不可用）
+  - [x] 为后续的蓝牙支持添加电池（蓝牙无线模式下指纹模块不可用）
+  - ~~ [ ] 添加ThinkPad TrackPoint小红点~~（该功能目前暂无计划更新）
+  - ~~ [ ] 添加特殊定义微动按钮~~（该功能目前暂无计划更新）
 
   ## Software:
   - [x] Microsoft精确式触摸板握手
@@ -49,8 +50,10 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
     - [x] 多指Tap支持（小概率可能触发不成功）
   - [x] 物理按键支持（左键 & 右键）
   - [x] 由freertos轮询切换到GPIO Int中断触发
-  - [x] 添加新的HID端口以支持Mouse Mode兼容
+  - [x] 添加新的HID端口以支持Mouse Mode兼容<br>
         （对于部分不支持PTP的老系统/BIOS可用，例如Windows 7）
+  - [ ] 2.4G无线模式开发
+  - [ ] 蓝牙无线模式开发
 
 ***
 
@@ -59,6 +62,9 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
  - 双指轻触（相当于鼠标右键单击）只能在笔记本平台上触发。
  - 为兼容而设计的HID多端口方案在部分老系统上可能无法使用，例如Windows7。
  - 不能快速连续单击。
+ - 由于标准限制，原生PTP Mode仅支持有线连接模式/2.4G无线模式。<br>蓝牙模式需要在ESP32端处理手势，并且只能支持一小部分自定义手势。
+
+ ***
 
 # 目前支持的系统（已经过测试）：
 
@@ -73,4 +79,8 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
 
 可前往[wiki page](https://github.com/barryblueice/ESP32-Precision-TouchPad/wiki)了解更多详细内容。
 
+***
 
+~~ # 相关的衍生计划：~~
+
+ - ~~仍在开发计划中~~

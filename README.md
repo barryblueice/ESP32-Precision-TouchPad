@@ -33,10 +33,11 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
   ## Hardware:
   - [x] PCB Design
   - [x] Material Selection
-  - [ ] Appearance Design (Modeling by using SOLIDWORKS)
-  - [ ] Adding battery to support Bluetooth (Fingerprint module is unavailable during bluetooth wireless state)
-  - [ ] Adding ThinkPad TrackPoint Mouse Pointer
-  - [ ] Adding specific function button
+  - [x] Appearance Design (Modeling by using SOLIDWORKS)
+  - [x] Adding battery to support 2.4G wireless (Fingerprint module is unavailable during 2.4G wireless state)
+  - [x] Adding battery to support wireless Bluetooth (Fingerprint module is unavailable during bluetooth wireless state)
+  - ~~ [ ] Adding ThinkPad TrackPoint Mouse Pointer~~ (There are no current plans for this function update)
+  - ~~ [ ] Adding specific function button~~ (There are no current plans for this function update)
 
   ## Software:
   - [x] Recognized as a Microsoft Percision TouchPad
@@ -49,8 +50,10 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
     - [x] Multi Tap Support (It might fail to trigger occasionally)
   - [x] Physical Buttons Support (left click & right click)
   - [x] Changing from freertos polling to GPIO interrupt
-  - [x] Add a new HID port to support Mouse Mode compatibility.
+  - [x] Add a new HID port to support Mouse Mode compatibility.<br>
         (available for some old systems/BIOS that doesn't support PTP, like Windows 7)
+  - [ ] 2.4G wireless mode development
+  - [ ] Bluetooth wireleess mode development
 
 ***
 
@@ -59,6 +62,9 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
  - Two fingers tap (equal to right click) can only trigger on laptop.
  - Multi-Port HID compatibility design may not support on some old system, like Windows XP.
  - Cannot perform rapid and consecutive clicks.
+ - Due to standard limitation, Original PTP Mode can only support wire connect/2.4G wireless mode. <br>Bluetooth mode need to handle gesture on ESP32 and only support a small part of customized gestures.
+
+***
 
 # Current Support System (already tested):
 
@@ -73,6 +79,8 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
 
 Please go to [wiki page](https://github.com/barryblueice/ESP32-Precision-TouchPad/wiki) for further detail.
 
+***
 
+~~ # Related derivative projects:~~
 
-
+ - ~~Still in development progress ~~
