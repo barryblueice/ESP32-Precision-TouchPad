@@ -56,8 +56,8 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
   - [x] 外壳设计 (SOLIDWORKS建模)
   - [x] 为后续的2.4G无线支持添加电池（2.4G无线模式下指纹模块不可用）
   - [x] 为后续的蓝牙支持添加电池（蓝牙无线模式下指纹模块不可用）
-  - ~~ [ ] 添加ThinkPad TrackPoint小红点~~（该功能目前暂无计划更新）
-  - ~~ [ ] 添加特殊定义微动按钮~~（该功能目前暂无计划更新）
+  - [ ] ~~添加ThinkPad TrackPoint小红点~~（该功能目前暂无计划更新）
+  - [ ] ~~添加特殊定义微动按钮~~（该功能目前暂无计划更新）
 
   ## Software:
   - [x] Microsoft精确式触摸板握手
@@ -102,5 +102,6 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
 ***
 
 ~~ # 相关的衍生计划：~~
+
 
  - ~~仍在开发计划中~~
