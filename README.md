@@ -104,5 +104,3 @@ Please go to [wiki page](https://github.com/barryblueice/ESP32-Precision-TouchPa
 # ~~Related derivative projects:~~
 
  - ~~Still in development progress~~
-
-
