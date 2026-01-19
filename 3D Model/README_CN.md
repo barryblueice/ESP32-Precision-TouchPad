@@ -2,7 +2,7 @@
 
 ## **About Appearance Design:**
 
-所有模型由`SOLIDWORKS 2024`完成建模。<br>`3D_PCB1_2026-01-18.step`和`指纹模块固定板.step`导出自嘉立创EDA专业版。
+所有模型由`SOLIDWORKS 2024`完成建模。<br>`3D_PCB1_2026-01-18.step`和`指纹模块固定板.step`导出自立创EDA专业版。
 
 ***
 
