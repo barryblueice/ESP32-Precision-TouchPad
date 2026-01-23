@@ -53,7 +53,7 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
   ## Hardware:
   - [x] PCB Design
   - [x] Material Selection
-  - [x] Appearance Design (Modeling by using SOLIDWORKS)
+  - [x] Appearance Design (Modeling by SOLIDWORKS)
   - [x] Adding battery to support 2.4G wireless (Fingerprint module is unavailable during 2.4G wireless state)
   - [x] Adding battery to support wireless Bluetooth (Fingerprint module is unavailable during bluetooth wireless state)
   - [ ] ~~Adding ThinkPad TrackPoint Mouse Pointer~~ (There are no current plans for this function update)
