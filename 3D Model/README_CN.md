@@ -17,8 +17,8 @@
 
 ## **3D渲染图:**
 
-<img width="900" height="506" alt="image" src="https://github.com/user-attachments/assets/c6dd642c-a9fa-4fb4-aafb-7b3156789653" />
+<img width="900" height="506" alt="image" src="https://github.com/user-attachments/assets/42be22d2-275e-4799-bdfd-6f022412048f" />
 
-<img width="900" height="506" alt="image" src="https://github.com/user-attachments/assets/57d47a7b-a472-4caa-8c2d-d9be049833bf" />
+<img width="900" height="506" alt="image" src="https://github.com/user-attachments/assets/bb75f841-200c-4c47-9cbe-ed900720e240" />
 
 <img width="900" height="506" alt="image" src="https://github.com/user-attachments/assets/28aea2f9-f43a-4217-a47e-e8b8bca49d43" />
