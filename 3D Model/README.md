@@ -1,5 +1,7 @@
 [English](https://github.com/barryblueice/ESP32-Precision-TouchPad/blob/main/3D%20Model/README.md) | [Simplified Chinese](https://github.com/barryblueice/ESP32-Precision-TouchPad/blob/main/3D%20Model/README_CN.md)
 
+<img width="900" height="723" alt="image" src="https://github.com/user-attachments/assets/6dd84c6f-8089-4962-9cd4-7cbeaad9e661" />
+
 ## **About Appearance Design:**
 
 All model were modeling by `SOLIDWORKS 2024`.<br>`3D_PCB1_2026-01-18.step` and `指纹模块固定板.step` were exported from EasyEDA Pro Edition.

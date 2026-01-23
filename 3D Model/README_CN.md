@@ -1,5 +1,7 @@
 [英文](https://github.com/barryblueice/ESP32-Precision-TouchPad/blob/main/3D%20Model/README.md) | [简体中文](https://github.com/barryblueice/ESP32-Precision-TouchPad/blob/main/3D%20Model/README_CN.md)
 
+<img width="900" height="723" alt="image" src="https://github.com/user-attachments/assets/6dd84c6f-8089-4962-9cd4-7cbeaad9e661" />
+
 ## **About Appearance Design:**
 
 所有模型由`SOLIDWORKS 2024`完成建模。<br>`3D_PCB1_2026-01-18.step`和`指纹模块固定板.step`导出自立创EDA专业版。
