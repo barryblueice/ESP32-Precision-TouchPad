@@ -11,4 +11,6 @@ idf_component_register(
         esp_tinyusb
         esp_timer
         nvs_flash
+        esp_event
+        esp_wifi
     )
