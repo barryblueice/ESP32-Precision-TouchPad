@@ -1,6 +1,6 @@
 [English](https://github.com/barryblueice/ESP32-Precision-TouchPad/blob/main/README.md) | [Simplified Chinese](https://github.com/barryblueice/ESP32-Precision-TouchPad/blob/main/README_CN.md)
 
-<img width="900" height="723" alt="image" src="https://github.com/user-attachments/assets/e58c6678-005a-40a1-95c6-31fec63a6622" />
+<img width="900" height="723" alt="image" src="https://github.com/user-attachments/assets/6dd84c6f-8089-4962-9cd4-7cbeaad9e661" />
 
 # **What's This?**
 
@@ -106,5 +106,6 @@ Please go to [wiki page](https://github.com/barryblueice/ESP32-Precision-TouchPa
 # ~~Related derivative projects:~~
 
  - ~~Still in development progress~~
+
 
 
