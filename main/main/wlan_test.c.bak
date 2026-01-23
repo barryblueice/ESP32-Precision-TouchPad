@@ -9,7 +9,6 @@
 
 static const char *TAG = "WIFI_TEST";
 
-/* 初始化 NVS (Wi-Fi 驱动需要 NVS 来存储配置) */
 void init_nvs() {
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -19,18 +18,14 @@ void init_nvs() {
     ESP_ERROR_CHECK(ret);
 }
 
-/* Wi-Fi 扫描函数：测试无线环境感知能力 */
 void wifi_scan_performance() {
-    // 1. 初始化网络堆栈
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_create_default_wifi_sta();
 
-    // 2. Wi-Fi 驱动初始化
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-    // 3. 设置为 Station 模式并启动
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
 
@@ -44,7 +39,6 @@ void wifi_scan_performance() {
     };
 
     while (1) {
-        // 开始扫描 (阻塞模式)
         ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, true));
 
         uint16_t ap_count = 0;
@@ -71,12 +65,11 @@ void wifi_scan_performance() {
         ESP_LOGI(TAG, "--------------------------------------------------");
 
         free(ap_records);
-        vTaskDelay(pdMS_TO_TICKS(10000)); // 每10秒测试一次
+        vTaskDelay(pdMS_TO_TICKS(10000));
     }
 }
 
 void app_main(void) {
-    // 打印芯片基本信息
     esp_chip_info_t chip_info;
     esp_chip_info(&chip_info);
     printf("正在测试 ESP32-S2 无线能力...\n");
