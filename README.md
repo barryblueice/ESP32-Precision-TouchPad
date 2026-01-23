@@ -1,5 +1,7 @@
 [English](https://github.com/barryblueice/ESP32-Precision-TouchPad/blob/main/README.md) | [Simplified Chinese](https://github.com/barryblueice/ESP32-Precision-TouchPad/blob/main/README_CN.md)
 
+<img width="900" height="723" alt="image" src="https://github.com/user-attachments/assets/e58c6678-005a-40a1-95c6-31fec63a6622" />
+
 # **What's This?**
 
 A touchpad peripheral device based on ESP32-S2 + ELAN TouchPad (Spare parts from Lenovo's inventory). Compatible with Microsoft Percision TouchPad (PTP) standard. Supported Windows Touch Gesture.
@@ -104,4 +106,5 @@ Please go to [wiki page](https://github.com/barryblueice/ESP32-Precision-TouchPa
 # ~~Related derivative projects:~~
 
  - ~~Still in development progress~~
+
 
