@@ -82,6 +82,7 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
 # 目前仍然存在的问题：
 
  - 双指轻触（相当于鼠标右键单击）只能在笔记本平台上触发。
+  > 关于台式机触发双指轻触的解决方案，参见[系统调优指南](https://github.com/barryblueice/ESP32-Precision-TouchPad/wiki/%E7%B3%BB%E7%BB%9F%E8%B0%83%E4%BC%98%E6%8C%87%E5%8D%97)
  - 为兼容而设计的HID多端口方案在部分老系统上可能无法使用，例如Windows XP。
  - 不能快速连续单击。
  - 由于标准限制，原生PTP Mode仅支持有线连接模式/2.4G无线模式。<br>蓝牙模式需要在ESP32端处理手势，并且只能支持一小部分自定义手势。
