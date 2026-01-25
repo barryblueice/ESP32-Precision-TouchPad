@@ -1,9 +1,9 @@
 #include <stdint.h>
 
 typedef struct {
-    uint32_t send_count;
+    uint32_t wireless_state;
     char message[16];
-} __attribute__((packed)) test_packet_t;
+} __attribute__((packed)) wireless_packet_t;
 
 #define ESPNOW_CHANNEL 1
 
@@ -13,19 +13,39 @@ typedef struct {
 #include "esp_wifi.h"
 #include "esp_now.h"
 #include "esp_log.h"
+#include "driver/gpio.h"
 
 static const char *TAG = "Reciever";
 
 static void recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, int len) {
-    test_packet_t pkt;
-    if (len == sizeof(test_packet_t)) {
+    wireless_packet_t pkt;
+    if (len == sizeof(wireless_packet_t)) {
         memcpy(&pkt, data, sizeof(pkt));
-        int rssi = recv_info->rx_ctrl->rssi;
-        printf("Pkt: %u | RSSI: %d dBm\r\n", (unsigned int)pkt.send_count, recv_info->rx_ctrl->rssi);
+
+        printf("Pkt: %u | RSSI: %d dBm\r\n", (unsigned int)pkt.wireless_state, recv_info->rx_ctrl->rssi);
+
+        if (pkt.wireless_state == 0){
+            gpio_set_level(GPIO_NUM_38, 0);
+        } else {
+            gpio_set_level(GPIO_NUM_38, 1);
+        }
+        // printf("Pkt: %u | RSSI: %d dBm\r\n", (unsigned int)pkt.wireless_state, recv_info->rx_ctrl->rssi);
     }
 }
 
 void app_main(void) {
+
+    gpio_config_t io_conf = {
+        .intr_type = GPIO_INTR_DISABLE,
+        .mode = GPIO_MODE_OUTPUT_OD,
+        .pin_bit_mask = (1ULL << GPIO_NUM_38),
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+    };
+    gpio_config(&io_conf);
+
+    gpio_set_level(GPIO_NUM_38, 1);
+
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());

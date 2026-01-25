@@ -6,11 +6,13 @@
 #include "tinyusb.h"
 #include "i2c/elan_i2c.h"
 #include "nvs/ptp_nvs.h"
+#include "wifi/wifi.h"
 
 void app_main(void) {
 
     elan_i2c_init();
     tp_interrupt_init();
+    vbus_det_init();
 
     ESP_ERROR_CHECK(nvs_mode_init());
     
