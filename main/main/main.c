@@ -6,7 +6,7 @@
 #include "tinyusb.h"
 #include "i2c/elan_i2c.h"
 #include "nvs/ptp_nvs.h"
-#include "wifi/wifi.h"
+#include "wireless/wireless.h"
 
 void app_main(void) {
 

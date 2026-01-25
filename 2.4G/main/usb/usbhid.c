@@ -12,7 +12,7 @@
 
 #include "math.h"
 
-// #include "i2c/elan_i2c.h"
+#include "wireless/wireless.h"
 
 #include "usb/usbhid.h"
 
@@ -103,25 +103,6 @@ void usbhid_init(void) {
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 }
 
-typedef struct __attribute__((packed)) {
-    uint8_t tip_conf_id;  // Bit0:Conf, Bit1:Tip, Bit2-7:ID
-    uint16_t x;           
-    uint16_t y;           
-} finger_t;
-
-typedef struct __attribute__((packed)) {
-    finger_t fingers[5];   // 5 * 5 = 25 bytes
-    uint16_t scan_time;    // 2 bytes
-    uint8_t contact_count; // 1 byte
-    uint8_t buttons;       // 1 byte
-} ptp_report_t;
-
-typedef struct __attribute__((packed)) {
-    uint8_t buttons;
-    int8_t  x;
-    int8_t  y;
-} mouse_hid_report_t;
-
 #define PTP_CONFIDENCE_BIT (1 << 0)
 #define PTP_TIP_SWITCH_BIT (1 << 1)
 
@@ -162,79 +143,25 @@ void usb_mount_task(void *arg) {
 }
 
 void usbhid_task(void *arg) {
-    // tp_multi_msg_t msg;
-    // mouse_msg_t mouse_msg;
-    static uint16_t last_scan_time = 0;
+    ptp_report_t tp_report; 
+    mouse_hid_report_t mouse_report;
 
     while (1) {
+        QueueSetMemberHandle_t xActivatedMember = xQueueSelectFromSet(main_queue_set, portMAX_DELAY);
 
-        vTaskDelay(pdMS_TO_TICKS(10));
-
-    //     QueueSetMemberHandle_t xActivatedMember = xQueueSelectFromSet(main_queue_set, portMAX_DELAY);
-
-    //     if (xActivatedMember == mouse_queue) {
-    //         if (xQueueReceive(mouse_queue, &mouse_msg, portMAX_DELAY)) {
-    //             mouse_hid_report_t report = {0};
-
-    //             int move_x = (int)(mouse_msg.x * SENSITIVITY);
-    //             int move_y = (int)(mouse_msg.y * SENSITIVITY);
-
-    //             if (move_x > 127)  move_x = 127;
-    //             if (move_x < -127) move_x = -127;
-
-    //             if (move_y > 127)  move_y = 127;
-    //             if (move_y < -127) move_y = -127;
-
-    //             report.x = (int8_t)move_x;
-    //             report.y = (int8_t)move_y;
-
-    //             report.buttons = mouse_msg.buttons & 0x07;
-
-    //             // ESP_LOGI(TAG, "X: %d, y:%d", report.x, report.y);
-
-    //             if (tud_hid_n_ready(1)) {
-    //                 tud_hid_n_report(1, REPORTID_MOUSE, &report, sizeof(report));
-    //             }
-    //         }
-    //     } else if (xActivatedMember == tp_queue) {
-    //         if (xQueueReceive(tp_queue, &msg, portMAX_DELAY)) {
-    //             ptp_report_t report = {0};
-
-    //             uint32_t now = esp_timer_get_time() / 100;
-    //             if (now <= last_scan_time) {
-    //                 now = last_scan_time + 1;
-    //             }
-    //             last_scan_time = now;
-    //             report.scan_time = (uint16_t)now;
-                
-    //             for (int i = 0; i < 5; i++) {
-    //                 if (msg.fingers[i].tip_switch) {
-    //                     // uint16_t tx = (msg.fingers[i].x * HID_MAX + RAW_X_MAX / 2) / RAW_X_MAX;
-    //                     // uint16_t ty = (msg.fingers[i].y * HID_MAX + RAW_Y_MAX / 2) / RAW_Y_MAX;
-    //                     uint16_t tx = msg.fingers[i].x;
-    //                     uint16_t ty = msg.fingers[i].y;
-    //                     // if (tx > HID_MAX) tx = HID_MAX;
-    //                     // if (ty > HID_MAX) ty = HID_MAX;
-    //                     uint8_t contact_id = i; 
-
-    //                     report.fingers[i].tip_conf_id = PTP_CONFIDENCE_BIT | PTP_TIP_SWITCH_BIT | (contact_id << 2);
-    //                     report.fingers[i].x = tx;
-    //                     report.fingers[i].y = ty;
-    //                 } else {
-    //                     report.fingers[i].tip_conf_id = (i << 2);
-    //                     report.fingers[i].x = 0;
-    //                     report.fingers[i].y = 0;
-    //                 }
-    //             }
-
-    //             report.contact_count = msg.actual_count;
-
-    //             report.buttons = (msg.button_mask > 0) ? 0x01 : 0x00;
-
-    //             if (tud_hid_n_ready(0)) {
-    //                 tud_hid_n_report(0, REPORTID_TOUCHPAD, &report, sizeof(report));
-    //             }
-    //         }
-    //     }
+        if (xActivatedMember == mouse_queue) {
+            if (xQueueReceive(mouse_queue, &mouse_report, 0)) {
+                if (tud_hid_n_ready(1)) {
+                    tud_hid_n_report(1, REPORTID_MOUSE, &mouse_report, sizeof(mouse_report));
+                }
+            }
+        } 
+        else if (xActivatedMember == tp_queue) {
+            if (xQueueReceive(tp_queue, &tp_report, 0)) {
+                if (tud_hid_n_ready(0)) {
+                    tud_hid_n_report(0, REPORTID_TOUCHPAD, &tp_report, sizeof(tp_report));
+                }
+            }
+        }
     }
 }

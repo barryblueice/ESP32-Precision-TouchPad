@@ -8,6 +8,9 @@
 #include "tusb.h"
 #include "class/hid/hid_device.h"
 
+#include "esp_wifi.h"
+#include "esp_now.h"
+
 #include "esp_timer.h"
 
 #include "math.h"
@@ -15,6 +18,8 @@
 #include "i2c/elan_i2c.h"
 
 #include "usb/usbhid.h"
+
+#include "wireless/wireless.h"
 
 #define TPD_REPORT_SIZE   6
 
@@ -103,31 +108,8 @@ void usbhid_init(void) {
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 }
 
-typedef struct __attribute__((packed)) {
-    uint8_t tip_conf_id;  // Bit0:Conf, Bit1:Tip, Bit2-7:ID
-    uint16_t x;           
-    uint16_t y;           
-} finger_t;
-
-typedef struct __attribute__((packed)) {
-    finger_t fingers[5];   // 5 * 5 = 25 bytes
-    uint16_t scan_time;    // 2 bytes
-    uint8_t contact_count; // 1 byte
-    uint8_t buttons;       // 1 byte
-} ptp_report_t;
-
-typedef struct __attribute__((packed)) {
-    uint8_t buttons;
-    int8_t  x;
-    int8_t  y;
-} mouse_hid_report_t;
-
 #define PTP_CONFIDENCE_BIT (1 << 0)
 #define PTP_TIP_SWITCH_BIT (1 << 1)
-
-// #define RAW_X_MAX 3679
-// #define RAW_Y_MAX 2261
-// #define HID_MAX   4095
 
 static uint8_t last_ptp_input_mode = 0xFF;
 
@@ -145,10 +127,12 @@ void usb_mount_task(void *arg) {
                     // elan_activate_mouse();
                     break;
                 case 0x00:
-                    ESP_LOGI(TAG, "Mode 0x01 detected: Activating ELAN MOUSE");
-                    current_mode = MOUSE_MODE;
-                    elan_activate_mouse();
-                    break;
+                    if (wireless_mode == 1) {
+                        ESP_LOGI(TAG, "Mode 0x01 detected: Activating ELAN MOUSE");
+                        current_mode = MOUSE_MODE;
+                        elan_activate_mouse();
+                        break;
+                    }
                 default:
                     break;
                 }
@@ -165,6 +149,7 @@ void usbhid_task(void *arg) {
     tp_multi_msg_t msg;
     mouse_msg_t mouse_msg;
     static uint16_t last_scan_time = 0;
+    wireless_msg_t pkt = {0};
 
     while (1) {
 
@@ -172,6 +157,7 @@ void usbhid_task(void *arg) {
 
         if (xActivatedMember == mouse_queue) {
             if (xQueueReceive(mouse_queue, &mouse_msg, portMAX_DELAY)) {
+
                 mouse_hid_report_t report = {0};
 
                 int move_x = (int)(mouse_msg.x * SENSITIVITY);
@@ -190,12 +176,19 @@ void usbhid_task(void *arg) {
 
                 // ESP_LOGI(TAG, "X: %d, y:%d", report.x, report.y);
 
-                if (tud_hid_n_ready(1)) {
-                    tud_hid_n_report(1, REPORTID_MOUSE, &report, sizeof(report));
+                if (wireless_mode == 1) {
+                    if (tud_hid_n_ready(1)) {
+                        tud_hid_n_report(1, REPORTID_MOUSE, &report, sizeof(report));
+                    } 
+                } else {
+                    pkt.type = MOUSE_MODE;
+                    pkt.payload.mouse = report;
+                    esp_now_send(receiver_mac, (uint8_t*)&pkt, sizeof(pkt));
                 }
             }
         } else if (xActivatedMember == tp_queue) {
             if (xQueueReceive(tp_queue, &msg, portMAX_DELAY)) {
+
                 ptp_report_t report = {0};
 
                 uint32_t now = esp_timer_get_time() / 100;
@@ -229,8 +222,14 @@ void usbhid_task(void *arg) {
 
                 report.buttons = (msg.button_mask > 0) ? 0x01 : 0x00;
 
-                if (tud_hid_n_ready(0)) {
-                    tud_hid_n_report(0, REPORTID_TOUCHPAD, &report, sizeof(report));
+                if (wireless_mode == 1) {
+                    if (tud_hid_n_ready(0)) {
+                        tud_hid_n_report(0, REPORTID_TOUCHPAD, &report, sizeof(report));
+                    }
+                } else {
+                    pkt.type = PTP_MODE;
+                    pkt.payload.ptp = report;
+                    esp_now_send(receiver_mac, (uint8_t*)&pkt, sizeof(pkt));
                 }
             }
         }

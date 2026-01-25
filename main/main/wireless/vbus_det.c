@@ -7,6 +7,7 @@
 #include "esp_wifi.h"
 #include "nvs_flash.h"
 #include "esp_now.h"
+#include "i2c/elan_i2c.h"
 
 #include "freertos/semphr.h"
 
@@ -14,35 +15,33 @@
 
 #define ESPNOW_CHANNEL 1
 
-typedef struct {
-    uint32_t wireless_state;
-    char message[16];
-} __attribute__((packed)) wireless_packet_t;
-
-wireless_packet_t pkt;
+wireless_msg_t pkt = {0};
 
 uint8_t receiver_mac[] = {0xDC, 0xB4, 0xD9, 0xA3, 0xD4, 0xD4};
 
 #define TAG "VBUS_DET"
 static SemaphoreHandle_t vbus_sem = NULL;
-static uint8_t current_level = 0;
+uint8_t wireless_mode = 0;
 
 static void IRAM_ATTR vbus_det_gpio_isr_handler(void* arg) {
-    current_level = gpio_get_level(GPIO_NUM_5);
+    wireless_mode = gpio_get_level(GPIO_NUM_5);
     xSemaphoreGiveFromISR(vbus_sem, NULL);
 }
 
 void vbus_processor_task(void *pvParameters) {
+    pkt.type = VBUS_STATUS;
     while (1) {
         if (xSemaphoreTake(vbus_sem, portMAX_DELAY)) {
-            pkt.wireless_state = current_level;
+            pkt.payload.vbus.vbus_level = wireless_mode;
             esp_err_t ret = esp_now_send(receiver_mac, (uint8_t *)&pkt, sizeof(pkt));
-            ESP_LOGI(TAG, "VBUS Changed: %d, Send status: %s", current_level, esp_err_to_name(ret));
+            ESP_LOGI(TAG, "VBUS Changed: %d, Send status: %s", wireless_mode, esp_err_to_name(ret));
         }
     }
 }
 
 void vbus_det_init(void) {
+
+    pkt.type = VBUS_STATUS;
 
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
@@ -75,7 +74,9 @@ void vbus_det_init(void) {
 
     gpio_isr_handler_add(GPIO_NUM_5, vbus_det_gpio_isr_handler, NULL);
 
-    current_level = gpio_get_level(GPIO_NUM_5);
+    wireless_mode = gpio_get_level(GPIO_NUM_5);
     
-    esp_err_t ret = esp_now_send(receiver_mac, (uint8_t *)&pkt, sizeof(pkt));
+    pkt.payload.vbus.vbus_level = wireless_mode;
+    
+    esp_now_send(receiver_mac, (uint8_t *)&pkt, sizeof(pkt));
 }

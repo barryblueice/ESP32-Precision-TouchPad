@@ -4,8 +4,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "tinyusb.h"
-#include "i2c/elan_i2c.h"
 #include "nvs/ptp_nvs.h"
+
+#include "wireless/wireless.h"
 
 void app_main(void) {
 
@@ -13,8 +14,8 @@ void app_main(void) {
     
     current_mode = MOUSE_MODE;
     
-    tp_queue = xQueueCreate(1, sizeof(tp_multi_msg_t));
-    mouse_queue = xQueueCreate(1, sizeof(mouse_msg_t));
+    tp_queue = xQueueCreate(1, sizeof(ptp_report_t));
+    mouse_queue = xQueueCreate(1, sizeof(mouse_hid_report_t));
 
     main_queue_set = xQueueCreateSet(1 + 1);
     xQueueAddToSet(mouse_queue, main_queue_set);
@@ -23,6 +24,7 @@ void app_main(void) {
     xTaskCreate(usb_mount_task, "mode_sel", 4096, NULL, 11, NULL);
 
     usbhid_init();
+    wifi_recieve_task_init();
 
     xTaskCreate(usbhid_task, "hid", 4096, NULL, 12, NULL);
 
