@@ -74,7 +74,7 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
   - [x] 由freertos轮询切换到GPIO Int中断触发
   - [x] 添加新的HID端口以支持Mouse Mode兼容<br>
         （对于部分不支持PTP的老系统/BIOS可用，例如Windows 7）
-  - [ ] 2.4G无线模式开发
+  - [x] 2.4G无线模式开发
   - [ ] 蓝牙无线模式开发
 
 ***

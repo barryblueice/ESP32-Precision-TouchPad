@@ -74,7 +74,7 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
   - [x] Changing from freertos polling to GPIO interrupt
   - [x] Add a new HID port to support Mouse Mode compatibility.<br>
         (available for some old systems/BIOS that doesn't support PTP, like Windows 7)
-  - [ ] 2.4G wireless mode development
+  - [x] 2.4G wireless mode development
   - [ ] Bluetooth wireleess mode development
 
 ***
