@@ -12,7 +12,6 @@ void app_main(void) {
 
     elan_i2c_init();
     tp_interrupt_init();
-    vbus_det_init();
 
     ESP_ERROR_CHECK(nvs_mode_init());
     
@@ -26,6 +25,8 @@ void app_main(void) {
     xQueueAddToSet(tp_queue, main_queue_set);
     
     xTaskCreate(usb_mount_task, "mode_sel", 4096, NULL, 11, NULL);
+    
+    vbus_det_init();
 
     usbhid_init();
 

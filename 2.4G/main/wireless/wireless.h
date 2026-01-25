@@ -7,6 +7,7 @@
 extern QueueHandle_t tp_queue;
 extern QueueHandle_t mouse_queue;
 extern QueueSetHandle_t main_queue_set;
+extern uint32_t last_seen_timestamp;
 
 typedef struct {
     struct {
@@ -30,10 +31,17 @@ typedef struct __attribute__((packed)) {
     uint8_t vbus_level;
 } vbus_msg_t;
 
+typedef struct __attribute__((packed)) {
+    uint8_t vbus_level;
+    uint8_t battery_level;
+    uint32_t uptime;
+} alive_msg_t;
+
 typedef enum {
     MOUSE_MODE = 0,
     PTP_MODE = 1,
-    VBUS_STATUS = 2
+    VBUS_STATUS = 2,
+    ALIVE_MODE = 3
 } input_mode_t;
 
 typedef struct __attribute__((packed)) {
@@ -61,10 +69,12 @@ typedef struct __attribute__((packed)) {
         mouse_hid_report_t mouse;
         ptp_report_t       ptp;
         vbus_msg_t         vbus;
+        alive_msg_t        alive;
     } payload;
 } wireless_msg_t;
 
 extern volatile uint8_t current_mode;
 void wifi_recieve_task_init();
+void monitor_link_task(void *arg);
 
 #endif

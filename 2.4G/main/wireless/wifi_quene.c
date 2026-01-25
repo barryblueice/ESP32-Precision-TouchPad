@@ -19,7 +19,6 @@ volatile uint8_t current_mode = MOUSE_MODE;
 static const char *TAG = "WIFI_QUENE";
 
 static void wifi_now_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, int len) {
-    // 基础长度检查
     if (len < sizeof(input_mode_t)) return;
 
     wireless_msg_t *msg = (wireless_msg_t *)data;
@@ -40,7 +39,15 @@ static void wifi_now_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t
         case VBUS_STATUS: 
     
             gpio_set_level(GPIO_NUM_38, msg->payload.vbus.vbus_level);
-            ESP_DRAM_LOGI(TAG, "Remote VBUS Level: %d", msg->payload.vbus.vbus_level);
+            // ESP_DRAM_LOGI(TAG, "Remote VBUS Level: %d", msg->payload.vbus.vbus_level);
+            break;
+
+        case ALIVE_MODE:
+
+            ESP_DRAM_LOGI(TAG,"LAST_SEEN_TIMESTAMP before: %u", last_seen_timestamp);
+
+            last_seen_timestamp = xTaskGetTickCount();
+            gpio_set_level(GPIO_NUM_38, msg->payload.alive.vbus_level);
             break;
 
         default:

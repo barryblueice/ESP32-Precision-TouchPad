@@ -8,6 +8,7 @@
 #include "nvs_flash.h"
 #include "esp_now.h"
 #include "i2c/elan_i2c.h"
+#include "wireless/wireless.h"
 
 #include "freertos/semphr.h"
 
@@ -19,13 +20,18 @@ wireless_msg_t pkt = {0};
 
 uint8_t receiver_mac[] = {0xDC, 0xB4, 0xD9, 0xA3, 0xD4, 0xD4};
 
+TaskHandle_t xHeartbeatTaskHandle = NULL;
+
 #define TAG "VBUS_DET"
 static SemaphoreHandle_t vbus_sem = NULL;
 uint8_t wireless_mode = 0;
 
+extern bool stop_heartbeat;
+
 static void IRAM_ATTR vbus_det_gpio_isr_handler(void* arg) {
     wireless_mode = gpio_get_level(GPIO_NUM_5);
     xSemaphoreGiveFromISR(vbus_sem, NULL);
+    stop_heartbeat = true;
 }
 
 void vbus_processor_task(void *pvParameters) {
@@ -79,4 +85,12 @@ void vbus_det_init(void) {
     pkt.payload.vbus.vbus_level = wireless_mode;
     
     esp_now_send(receiver_mac, (uint8_t *)&pkt, sizeof(pkt));
+
+    if (wireless_mode == 0) {
+        xTaskCreate(alive_heartbeat_task, "heartbeat", 2048, NULL, 2, NULL);
+        stop_heartbeat = false;
+        ESP_LOGI(TAG, "Wireless mode currently, forcing PTP mode activation");
+        current_mode = PTP_MODE;
+        elan_activate_ptp();
+    }
 }

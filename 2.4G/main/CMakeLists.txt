@@ -4,6 +4,7 @@ idf_component_register(
         "usb/usb_descriptor.c"
         "nvs/ptp_nvs.c"
         "wireless/wifi_quene.c"
+        "wireless/heartbeat.c"
     INCLUDE_DIRS "."
     PRIV_REQUIRES esp_driver_gpio
         esp_driver_i2c

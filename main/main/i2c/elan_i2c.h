@@ -27,6 +27,12 @@ typedef struct __attribute__((packed)) {
     uint8_t vbus_level;
 } vbus_msg_t;
 
+typedef struct __attribute__((packed)) {
+    uint8_t vbus_level;
+    uint8_t battery_level;
+    uint32_t uptime;
+} alive_msg_t;
+
 typedef struct {
     bool active;
     uint32_t down_time;
@@ -43,7 +49,8 @@ extern QueueSetHandle_t main_queue_set;
 typedef enum {
     MOUSE_MODE = 0,
     PTP_MODE = 1,
-    VBUS_STATUS = 2
+    VBUS_STATUS = 2,
+    ALIVE_MODE = 3
 } input_mode_t;
 
 typedef struct __attribute__((packed)) {
@@ -71,6 +78,7 @@ typedef struct __attribute__((packed)) {
         mouse_hid_report_t mouse;
         ptp_report_t       ptp;
         vbus_msg_t         vbus;
+        alive_msg_t        alive;
     } payload;
 } wireless_msg_t;
 
