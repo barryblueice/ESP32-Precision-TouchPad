@@ -73,7 +73,6 @@ void vbus_det_init(void) {
     };
     gpio_config(&io_conf);
 
-    gpio_install_isr_service(0); 
     gpio_isr_handler_add(GPIO_NUM_5, vbus_det_gpio_isr_handler, NULL);
 
     current_level = gpio_get_level(GPIO_NUM_5);
