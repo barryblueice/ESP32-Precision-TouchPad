@@ -18,6 +18,8 @@ void alive_heartbeat_task(void *pvParameters) {
             break;
         }
 
+        // ESP_LOGW("HeartBeat", "Starting Alive Heartbeat Task");
+
         alive_pkt.payload.alive.battery_level = 100;
         alive_pkt.payload.alive.uptime = xTaskGetTickCount() * portTICK_PERIOD_MS / 1000;
         alive_pkt.payload.alive.vbus_level = wireless_mode;
