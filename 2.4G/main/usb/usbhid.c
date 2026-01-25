@@ -12,7 +12,7 @@
 
 #include "math.h"
 
-#include "i2c/elan_i2c.h"
+// #include "i2c/elan_i2c.h"
 
 #include "usb/usbhid.h"
 
@@ -42,7 +42,7 @@ tusb_desc_device_t const desc_device = {
     .bDeviceProtocol    = 0x00,
     .bMaxPacketSize0    = CFG_TUD_ENDPOINT0_SIZE,
     .idVendor           = 0x0D00,
-    .idProduct          = 0x072A,
+    .idProduct          = 0x072B,
     .bcdDevice          = 0x0100,
     .iManufacturer      = 0x01,
     .iProduct           = 0x02,
@@ -54,9 +54,9 @@ tusb_desc_device_t const desc_device = {
 char const* string_desc[] = {
     (const char[]){0x09, 0x04},                  // 0: Language
     "R-SODIUM Technology",                       // 1: Manufacturer
-    "R-SODIUM Precision TouchPad",               // 2: Product
-    "0D00072A00000000",                          // 3: Serial Number
-    "Precision Touchpad HID Interface"           // 4: HID Interface
+    "R-SODIUM PTP 2.4G Reciever",                // 2: Product
+    "0D00072B00000000",                          // 3: Serial Number
+    "PTP Wireless HID Interface"                 // 4: HID Interface
 };
 
 // TinyUSB callbacks
@@ -138,16 +138,16 @@ void usb_mount_task(void *arg) {
                 switch (ptp_input_mode) {
                 case 0x03:
                     ESP_LOGI(TAG, "Mode 0x03 detected: Activating ELAN PTP");
-                    current_mode = PTP_MODE;
-                    elan_activate_ptp();
+                    // current_mode = PTP_MODE;
+                    // elan_activate_ptp();
                     // ESP_LOGI(TAG, "Mode 0x01 detected: Activating ELAN MOUSE");
                     // current_mode = MOUSE_MODE;
                     // elan_activate_mouse();
                     break;
                 case 0x00:
                     ESP_LOGI(TAG, "Mode 0x01 detected: Activating ELAN MOUSE");
-                    current_mode = MOUSE_MODE;
-                    elan_activate_mouse();
+                    // current_mode = MOUSE_MODE;
+                    // elan_activate_mouse();
                     break;
                 default:
                     break;
@@ -162,77 +162,79 @@ void usb_mount_task(void *arg) {
 }
 
 void usbhid_task(void *arg) {
-    tp_multi_msg_t msg;
-    mouse_msg_t mouse_msg;
+    // tp_multi_msg_t msg;
+    // mouse_msg_t mouse_msg;
     static uint16_t last_scan_time = 0;
 
     while (1) {
 
-        QueueSetMemberHandle_t xActivatedMember = xQueueSelectFromSet(main_queue_set, portMAX_DELAY);
+        vTaskDelay(pdMS_TO_TICKS(10));
 
-        if (xActivatedMember == mouse_queue) {
-            if (xQueueReceive(mouse_queue, &mouse_msg, portMAX_DELAY)) {
-                mouse_hid_report_t report = {0};
+    //     QueueSetMemberHandle_t xActivatedMember = xQueueSelectFromSet(main_queue_set, portMAX_DELAY);
 
-                int move_x = (int)(mouse_msg.x * SENSITIVITY);
-                int move_y = (int)(mouse_msg.y * SENSITIVITY);
+    //     if (xActivatedMember == mouse_queue) {
+    //         if (xQueueReceive(mouse_queue, &mouse_msg, portMAX_DELAY)) {
+    //             mouse_hid_report_t report = {0};
 
-                if (move_x > 127)  move_x = 127;
-                if (move_x < -127) move_x = -127;
+    //             int move_x = (int)(mouse_msg.x * SENSITIVITY);
+    //             int move_y = (int)(mouse_msg.y * SENSITIVITY);
 
-                if (move_y > 127)  move_y = 127;
-                if (move_y < -127) move_y = -127;
+    //             if (move_x > 127)  move_x = 127;
+    //             if (move_x < -127) move_x = -127;
 
-                report.x = (int8_t)move_x;
-                report.y = (int8_t)move_y;
+    //             if (move_y > 127)  move_y = 127;
+    //             if (move_y < -127) move_y = -127;
 
-                report.buttons = mouse_msg.buttons & 0x07;
+    //             report.x = (int8_t)move_x;
+    //             report.y = (int8_t)move_y;
 
-                // ESP_LOGI(TAG, "X: %d, y:%d", report.x, report.y);
+    //             report.buttons = mouse_msg.buttons & 0x07;
 
-                if (tud_hid_n_ready(1)) {
-                    tud_hid_n_report(1, REPORTID_MOUSE, &report, sizeof(report));
-                }
-            }
-        } else if (xActivatedMember == tp_queue) {
-            if (xQueueReceive(tp_queue, &msg, portMAX_DELAY)) {
-                ptp_report_t report = {0};
+    //             // ESP_LOGI(TAG, "X: %d, y:%d", report.x, report.y);
 
-                uint32_t now = esp_timer_get_time() / 100;
-                if (now <= last_scan_time) {
-                    now = last_scan_time + 1;
-                }
-                last_scan_time = now;
-                report.scan_time = (uint16_t)now;
+    //             if (tud_hid_n_ready(1)) {
+    //                 tud_hid_n_report(1, REPORTID_MOUSE, &report, sizeof(report));
+    //             }
+    //         }
+    //     } else if (xActivatedMember == tp_queue) {
+    //         if (xQueueReceive(tp_queue, &msg, portMAX_DELAY)) {
+    //             ptp_report_t report = {0};
+
+    //             uint32_t now = esp_timer_get_time() / 100;
+    //             if (now <= last_scan_time) {
+    //                 now = last_scan_time + 1;
+    //             }
+    //             last_scan_time = now;
+    //             report.scan_time = (uint16_t)now;
                 
-                for (int i = 0; i < 5; i++) {
-                    if (msg.fingers[i].tip_switch) {
-                        // uint16_t tx = (msg.fingers[i].x * HID_MAX + RAW_X_MAX / 2) / RAW_X_MAX;
-                        // uint16_t ty = (msg.fingers[i].y * HID_MAX + RAW_Y_MAX / 2) / RAW_Y_MAX;
-                        uint16_t tx = msg.fingers[i].x;
-                        uint16_t ty = msg.fingers[i].y;
-                        // if (tx > HID_MAX) tx = HID_MAX;
-                        // if (ty > HID_MAX) ty = HID_MAX;
-                        uint8_t contact_id = i; 
+    //             for (int i = 0; i < 5; i++) {
+    //                 if (msg.fingers[i].tip_switch) {
+    //                     // uint16_t tx = (msg.fingers[i].x * HID_MAX + RAW_X_MAX / 2) / RAW_X_MAX;
+    //                     // uint16_t ty = (msg.fingers[i].y * HID_MAX + RAW_Y_MAX / 2) / RAW_Y_MAX;
+    //                     uint16_t tx = msg.fingers[i].x;
+    //                     uint16_t ty = msg.fingers[i].y;
+    //                     // if (tx > HID_MAX) tx = HID_MAX;
+    //                     // if (ty > HID_MAX) ty = HID_MAX;
+    //                     uint8_t contact_id = i; 
 
-                        report.fingers[i].tip_conf_id = PTP_CONFIDENCE_BIT | PTP_TIP_SWITCH_BIT | (contact_id << 2);
-                        report.fingers[i].x = tx;
-                        report.fingers[i].y = ty;
-                    } else {
-                        report.fingers[i].tip_conf_id = (i << 2);
-                        report.fingers[i].x = 0;
-                        report.fingers[i].y = 0;
-                    }
-                }
+    //                     report.fingers[i].tip_conf_id = PTP_CONFIDENCE_BIT | PTP_TIP_SWITCH_BIT | (contact_id << 2);
+    //                     report.fingers[i].x = tx;
+    //                     report.fingers[i].y = ty;
+    //                 } else {
+    //                     report.fingers[i].tip_conf_id = (i << 2);
+    //                     report.fingers[i].x = 0;
+    //                     report.fingers[i].y = 0;
+    //                 }
+    //             }
 
-                report.contact_count = msg.actual_count;
+    //             report.contact_count = msg.actual_count;
 
-                report.buttons = (msg.button_mask > 0) ? 0x01 : 0x00;
+    //             report.buttons = (msg.button_mask > 0) ? 0x01 : 0x00;
 
-                if (tud_hid_n_ready(0)) {
-                    tud_hid_n_report(0, REPORTID_TOUCHPAD, &report, sizeof(report));
-                }
-            }
-        }
+    //             if (tud_hid_n_ready(0)) {
+    //                 tud_hid_n_report(0, REPORTID_TOUCHPAD, &report, sizeof(report));
+    //             }
+    //         }
+    //     }
     }
 }

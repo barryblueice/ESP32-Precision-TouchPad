@@ -9,9 +9,6 @@
 
 void app_main(void) {
 
-    elan_i2c_init();
-    tp_interrupt_init();
-
     ESP_ERROR_CHECK(nvs_mode_init());
     
     current_mode = MOUSE_MODE;
@@ -27,7 +24,6 @@ void app_main(void) {
 
     usbhid_init();
 
-    xTaskCreate(elan_i2c_task, "elan_i2c", 4096, NULL, 10, NULL);
     xTaskCreate(usbhid_task, "hid", 4096, NULL, 12, NULL);
 
     while (1) {

@@ -10,5 +10,6 @@ idf_component_register(
         esp_driver_i2c
         esp_tinyusb
         esp_timer
+        esp_wifi
         nvs_flash
     )
