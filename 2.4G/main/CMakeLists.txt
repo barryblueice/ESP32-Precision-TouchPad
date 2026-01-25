@@ -5,6 +5,7 @@ idf_component_register(
         "nvs/ptp_nvs.c"
         "wireless/wifi_quene.c"
         "wireless/heartbeat.c"
+        "wireless/broadcast.c"
     INCLUDE_DIRS "."
     PRIV_REQUIRES esp_driver_gpio
         esp_driver_i2c

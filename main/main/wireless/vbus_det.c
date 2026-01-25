@@ -89,8 +89,9 @@ void vbus_det_init(void) {
     if (wireless_mode == 0) {
         xTaskCreate(alive_heartbeat_task, "heartbeat", 2048, NULL, 2, NULL);
         stop_heartbeat = false;
-        ESP_LOGI(TAG, "Wireless mode currently, forcing PTP mode activation");
-        current_mode = PTP_MODE;
-        elan_activate_ptp();
+        // ESP_LOGI(TAG, "Wireless mode currently, forcing PTP mode activation");
+        // current_mode = PTP_MODE;
+        // elan_activate_ptp();
+        wireless_init();
     }
 }

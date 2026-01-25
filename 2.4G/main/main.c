@@ -30,6 +30,8 @@ void app_main(void) {
 
     xTaskCreate(monitor_link_task, "heartbeat", 2048, NULL, 2, NULL);
 
+    broadcast_init();
+
     while (1) {
         tud_task(); 
         vTaskDelay(pdMS_TO_TICKS(1)); 

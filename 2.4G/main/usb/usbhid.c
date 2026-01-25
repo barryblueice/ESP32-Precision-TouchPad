@@ -16,6 +16,8 @@
 
 #include "usb/usbhid.h"
 
+#include "esp_now.h"
+
 #define TPD_REPORT_SIZE   6
 
 static const char *TAG = "USB_HID_TP";
@@ -119,7 +121,7 @@ void usb_mount_task(void *arg) {
                 switch (ptp_input_mode) {
                 case 0x03:
                     ESP_LOGI(TAG, "Mode 0x03 detected: Activating ELAN PTP");
-                    // current_mode = PTP_MODE;
+                    current_mode = PTP_MODE;
                     // elan_activate_ptp();
                     // ESP_LOGI(TAG, "Mode 0x01 detected: Activating ELAN MOUSE");
                     // current_mode = MOUSE_MODE;
@@ -127,12 +129,13 @@ void usb_mount_task(void *arg) {
                     break;
                 case 0x00:
                     ESP_LOGI(TAG, "Mode 0x01 detected: Activating ELAN MOUSE");
-                    // current_mode = MOUSE_MODE;
+                    current_mode = MOUSE_MODE;
                     // elan_activate_mouse();
                     break;
                 default:
                     break;
                 }
+                esp_now_send(broadcast_mac, &current_mode, 1);
                 last_ptp_input_mode = ptp_input_mode;
             }
         } else {

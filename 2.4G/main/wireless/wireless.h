@@ -74,7 +74,10 @@ typedef struct __attribute__((packed)) {
 } wireless_msg_t;
 
 extern volatile uint8_t current_mode;
+extern uint8_t broadcast_mac[6];
+
 void wifi_recieve_task_init();
+void broadcast_init();
 void monitor_link_task(void *arg);
 
 #endif
