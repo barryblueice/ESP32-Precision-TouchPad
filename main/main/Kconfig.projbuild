@@ -1,0 +1,9 @@
+menu "TouchPad Wireless Configuration"
+
+    config RECEIVER_MAC_ADDR
+        string "Receiver MAC Address"
+        default "FF:FF:FF:FF:FF:FF"
+        help
+            Enter the MAC address of your PTP 2.4G Reciever in XX:XX:XX:XX:XX:XX format.
+
+endmenu

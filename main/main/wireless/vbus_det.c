@@ -12,13 +12,32 @@
 
 #include "freertos/semphr.h"
 
+#include "sdkconfig.h"
+
 #define TAG "VBUS_DET"
 
 #define ESPNOW_CHANNEL 1
 
 wireless_msg_t pkt = {0};
 
-uint8_t receiver_mac[] = {0xDC, 0xB4, 0xD9, 0xA3, 0xD4, 0xD4};
+uint8_t receiver_mac[6];
+
+void parse_mac_from_config() {
+    const char* mac_str = CONFIG_RECEIVER_MAC_ADDR;
+    int values[6];
+
+    if (sscanf(mac_str, "%x:%x:%x:%x:%x:%x", 
+               &values[0], &values[1], &values[2], 
+               &values[3], &values[4], &values[5]) == 6) {
+        for (int i = 0; i < 6; ++i) {
+            receiver_mac[i] = (uint8_t)values[i];
+        }
+    } else {
+        ESP_LOGE("CONFIG", "Invalid MAC address format in Kconfig!");
+        uint8_t default_mac[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+        memcpy(receiver_mac, default_mac, 6);
+    }
+}
 
 TaskHandle_t xHeartbeatTaskHandle = NULL;
 
@@ -60,6 +79,9 @@ void vbus_det_init(void) {
     ESP_ERROR_CHECK(esp_now_init());
 
     esp_now_peer_info_t peer = {};
+
+    parse_mac_from_config();
+
     memcpy(peer.peer_addr, receiver_mac, 6);
     peer.channel = ESPNOW_CHANNEL;
     peer.encrypt = false;
