@@ -44,7 +44,7 @@ static void wifi_now_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t
 
         case ALIVE_MODE:
 
-            ESP_DRAM_LOGI(TAG,"LAST_SEEN_TIMESTAMP before: %u", last_seen_timestamp);
+            // ESP_DRAM_LOGI(TAG,"LAST_SEEN_TIMESTAMP before: %u", last_seen_timestamp);
 
             last_seen_timestamp = xTaskGetTickCount();
             gpio_set_level(GPIO_NUM_38, msg->payload.alive.vbus_level);
