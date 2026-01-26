@@ -135,7 +135,7 @@ void usb_mount_task(void *arg) {
                 default:
                     break;
                 }
-                esp_now_send(broadcast_mac, &current_mode, 1);
+                esp_now_send(broadcast_mac, (const uint8_t *)&current_mode, 1);
                 last_ptp_input_mode = ptp_input_mode;
             }
         } else {
