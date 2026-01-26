@@ -85,7 +85,7 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
    > Regarding the solution for triggering double-finger touch on a Desktop PC, please refer to [System Tuning Guidelines](https://github.com/barryblueice/ESP32-Precision-TouchPad/wiki/System%20Tuning%20Guidelines).
  - Multi-Port HID compatibility design may not support on some old system, like Windows XP.
  - Cannot perform rapid and consecutive clicks.
- - Due to standard limitation, Original PTP Mode can only support wire connect/2.4G wireless mode. <br>Bluetooth mode need to handle gesture on ESP32 and only support a small part of customized gestures.
+ - Due to processor limitation, Original PTP Mode can only support wire connect/2.4G wireless mode. <br>Bluetooth mode needs to use ESP32-S3.
 
 ***
 
