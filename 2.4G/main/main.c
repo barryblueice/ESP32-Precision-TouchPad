@@ -5,8 +5,11 @@
 #include "freertos/task.h"
 #include "tinyusb.h"
 #include "nvs/ptp_nvs.h"
+#include "esp_wifi.h"
 
 #include "wireless/wireless.h"
+
+#include "esp_mac.h"
 
 void app_main(void) {
 
@@ -31,6 +34,12 @@ void app_main(void) {
     xTaskCreate(monitor_link_task, "heartbeat", 2048, NULL, 2, NULL);
 
     broadcast_init();
+
+    uint8_t mac[6];
+
+    esp_read_mac(mac, ESP_MAC_WIFI_STA);
+    ESP_LOGI("MAC_ADDR", "Reciever MAC: %02X:%02X:%02X:%02X:%02X:%02X",
+             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
     while (1) {
         tud_task(); 
