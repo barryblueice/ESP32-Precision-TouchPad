@@ -13,9 +13,11 @@ All model were modeling by `SOLIDWORKS 2024`.<br>`3D_PCB1_2026-01-18.step` and `
  - `触摸板.SLDPRT` is an example model of TouchPad what I used.
  - `指纹模块.SLDPRT` is an example model of HP FM3483/3633 fingerprint module.
  - `3D_PCB1_2026-01-18.step` is an example model of TouchPad Main PCB.
- - `外壳.SLDPRT` / `外壳.STEP` is the shell of TouchPad, `底壳.SLDPRT` is the base of shell.
+ - `外壳.SLDPRT` / `外壳.STEP` is the shell of TouchPad, `底壳.SLDPRT` / `底壳.STEP` is the base of shell.
  - `指纹模块固定板.step` is a PCB that fixed the fingerprint module when installed on shell.
  - `总装.SLDASM` is the theoretical assembly and renderings of the finished product.
+ - `外壳-无指纹.SLDPRT` / `外壳-无指纹.STEP` is the shell of TouchPad but without fingerprint module, `底壳-无指纹.SLDPRT` / `底壳-无指纹.STEP` is the base of shell but without fingerprint module.
+ - `总装-无指纹.SLDASM` is the theoretical assembly and renderings of the finished product without fingerprint module.
 
 ## **3D rendering image:**
 
