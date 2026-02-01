@@ -504,7 +504,7 @@ CONFIG_PARTITION_TABLE_MD5=y
 #
 # TouchPad Wireless Configuration
 #
-CONFIG_RECEIVER_MAC_ADDR="DC:B4:D9:A3:D4:D4"
+CONFIG_RECEIVER_MAC_ADDR="FF:FF:FF:FF:FF:FF"
 # end of TouchPad Wireless Configuration
 
 #
