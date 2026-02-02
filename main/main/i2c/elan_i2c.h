@@ -15,6 +15,7 @@ typedef struct {
     } fingers[5];
     uint8_t actual_count;
     uint8_t button_mask;
+    uint16_t scan_time;
 } tp_multi_msg_t;
 
 typedef struct __attribute__((packed)) {

@@ -191,12 +191,14 @@ void usbhid_task(void *arg) {
 
                 ptp_report_t report = {0};
 
-                uint32_t now = esp_timer_get_time() / 100;
-                if (now <= last_scan_time) {
-                    now = last_scan_time + 1;
-                }
-                last_scan_time = now;
-                report.scan_time = (uint16_t)now;
+                // uint32_t now = esp_timer_get_time() / 100;
+                // if (now <= last_scan_time) {
+                //     now = last_scan_time + 1;
+                // }
+                // last_scan_time = now;
+                // report.scan_time = (uint16_t)now;
+
+                report.scan_time = msg.scan_time;
                 
                 for (int i = 0; i < 5; i++) {
                     if (msg.fingers[i].tip_switch) {

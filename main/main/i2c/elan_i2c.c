@@ -104,218 +104,178 @@ void elan_i2c_init(void) {
 #define SETTLING_MS 15
 #define FILTER_ALPHA 0.5f
 
-static float filtered_x[5] = {0};
-static float filtered_y[5] = {0};
-
 typedef enum {
     TOUCH_IDLE,
     TOUCH_TAP_CANDIDATE,
     TOUCH_DRAG
 } touch_state_t;
 
-
 void elan_i2c_task(void *arg) {
-
+    static tp_multi_msg_t global_tp_state = {0};
+    static uint16_t last_sync_scan_time = 0;
+    static bool finger_seen_this_frame[5] = {false};
+    
     static uint16_t last_raw_x[5] = {0};
     static uint16_t last_raw_y[5] = {0};
     static uint16_t origin_x[5] = {0};
     static uint16_t origin_y[5] = {0};
-    static int64_t last_report_time = 0;
-    static int64_t first_touch_time = 0;
     static bool tap_frozen[5] = {false};
-    static touch_state_t touch_state[5] = {0};
+    static touch_state_t touch_state[5] = {TOUCH_IDLE};
+    static int64_t last_report_time = 0;
+    static float filtered_x[5] = {0};
+    static float filtered_y[5] = {0};
     
     uint8_t data[64];
     const uint16_t JUMP_THRESHOLD = 800;
     const int64_t STALE_MS = 50;
 
+    uint16_t hardware_scan_time = 0;
+
     while (1) {
+        
         ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1)); 
 
-        tp_multi_msg_t tp_current_state = {0}; 
+        bool has_ptp_data = false;
         mouse_msg_t mouse_current_state = {0};
-        bool has_data = false;
         int64_t now = esp_timer_get_time() / 1000;
 
         if (now - last_report_time > STALE_MS) {
             for (int i = 0; i < 5; i++) { 
                 last_raw_x[i] = 0; last_raw_y[i] = 0; 
                 origin_x[i] = 0; origin_y[i] = 0;
+                touch_state[i] = TOUCH_IDLE;
             }
         }
 
-        int safety = 10;
+        int safety = 20; 
         while (gpio_get_level(INT_IO) == 0 && safety-- > 0) {
-            if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(5)) == ESP_OK) {
-                tp_current_state.button_mask = (data[11] & 0x01) ? 0x01 : 0x00;
+            if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(5)) != ESP_OK) break;
 
-                // ESP_LOG_BUFFER_HEX(TAG, data, 12);
+            if (data[0] == 0 && data[2] == 0) {
+                memset(&global_tp_state, 0, sizeof(global_tp_state));
+                memset(finger_seen_this_frame, 0, sizeof(finger_seen_this_frame));
+                memset(last_raw_x, 0, sizeof(last_raw_x));
+                xQueueOverwrite(tp_queue, &global_tp_state);
+                continue;
+            }
 
-                if (data[2] == 0x04) {
+            if (data[2] == 0x04) {
+                current_mode = PTP_MODE;
+                uint8_t id = (data[3] & 0xF0) >> 4;
+                bool tip = (data[3] & 0x01);
+                bool confidence = (data[3] & 0x02);
+                uint16_t current_scan_time = data[8] | (data[9] << 8);
+                hardware_scan_time = data[8] | (data[9] << 8);
 
-                    current_mode = PTP_MODE;
-
-                    uint8_t status = data[3];
-                    uint8_t id = (status & 0xF0) >> 4;
-
-                    if (id < 5) {
-
-                        uint8_t status = data[3];
-                        uint8_t id = (status & 0xF0) >> 4;
-                        bool tip = (status & 0x01);
-                        bool confidence = (status & 0x02);
-                        
-                        bool is_valid_touch = tip && confidence;
-
-                        uint16_t rx = data[4] | (data[5] << 8);
-                        uint16_t ry = data[6] | (data[7] << 8);
-
-                        if (is_valid_touch && rx > 0 && ry > 0) {
-
-                            if (last_raw_x[id] == 0) {
-                                touch_state[id] = TOUCH_TAP_CANDIDATE;
-                                origin_x[id] = rx;
-                                origin_y[id] = ry;
-                                filtered_x[id] = (float)rx;
-                                filtered_y[id] = (float)ry;
-
-                                if (first_touch_time == 0)
-                                    first_touch_time = now;
-                            } else {
-                                int vx = rx - last_raw_x[id];
-                                int vy = ry - last_raw_y[id];
-                                int alpha_speed = abs(vx) + abs(vy);
-
-                                float dynamic_alpha;
-                                if (alpha_speed < 3)
-                                    dynamic_alpha = 0.25f;
-                                else if (alpha_speed < 12)
-                                    dynamic_alpha = 0.45f;
-                                else
-                                    dynamic_alpha = 0.85f;
-
-                                filtered_x[id] = dynamic_alpha * rx + (1.0f - dynamic_alpha) * filtered_x[id];
-                                filtered_y[id] = dynamic_alpha * ry + (1.0f - dynamic_alpha) * filtered_y[id];
-                            }
-
-                            uint16_t fx = (uint16_t)filtered_x[id];
-                            uint16_t fy = (uint16_t)filtered_y[id];
-
-                            int dx_raw = rx - last_raw_x[id];
-                            int dy_raw = ry - last_raw_y[id];
-
-                            if (abs(dx_raw) > abs(dy_raw) * 2 && abs(dy_raw) < 6) {
-                                ry = last_raw_y[id];
-                            } else if (abs(dy_raw) > abs(dx_raw) * 2 && abs(dx_raw) < 6) {
-                                rx = last_raw_x[id];
-                            }
-
-                            int dx = abs((int)rx - (int)origin_x[id]);
-                            int dy = abs((int)ry - (int)origin_y[id]);
-
-                            if (touch_state[id] == TOUCH_TAP_CANDIDATE &&
-                                (dx > TAP_DEADZONE || dy > TAP_DEADZONE)) {
-                                touch_state[id] = TOUCH_DRAG;
-                                tap_frozen[id] = false;
-                            }
-
-                            if (touch_state[id] == TOUCH_TAP_CANDIDATE) {
-                                if (!tap_frozen[id]) {
-                                    tap_frozen[id] = true;
-                                    filtered_x[id] = origin_x[id];
-                                    filtered_y[id] = origin_y[id];
-                                }
-                                tp_current_state.fingers[id].x = origin_x[id];
-                                tp_current_state.fingers[id].y = origin_y[id];
-                            } else {
-                                tap_frozen[id] = false;
-                                tp_current_state.fingers[id].x = fx;
-                                tp_current_state.fingers[id].y = fy;
-                            }
-
-                            int sum_x = 0, sum_y = 0, count = 0;
-                            for (int i = 0; i < 5; i++) {
-                                if (tap_frozen[i]) {
-                                    sum_x += origin_x[i];
-                                    sum_y += origin_y[i];
-                                    count++;
-                                }
-                            }
-                            if (count > 1) {
-                                int avg_x = sum_x / count;
-                                int avg_y = sum_y / count;
-                                for (int i = 0; i < 5; i++) {
-                                    if (tap_frozen[i]) {
-                                        origin_x[i] = avg_x;
-                                        origin_y[i] = avg_y;
-                                    }
-                                }
-                            }
-
-                            if (!tap_frozen[id] &&
-                                last_raw_x[id] != 0 &&
-                                abs((int)rx - (int)last_raw_x[id]) > JUMP_THRESHOLD) {
-                                tp_current_state.fingers[id].x = last_raw_x[id];
-                                tp_current_state.fingers[id].y = last_raw_y[id];
-                            }
-
-                            last_raw_x[id] = rx;
-                            last_raw_y[id] = ry;
-
-                            tp_current_state.fingers[id].tip_switch = 1;
-                            tp_current_state.fingers[id].contact_id = id;
-                            has_data = true;
-                        } else {
-                            tp_current_state.fingers[id].tip_switch = 0;
-                            tp_current_state.fingers[id].x = last_raw_x[id];
-                            tp_current_state.fingers[id].y = last_raw_y[id];
-
-                            last_raw_x[id] = 0;
-                            last_raw_y[id] = 0;
-                            origin_x[id] = 0;
-                            origin_y[id] = 0;
-                            filtered_x[id] = 0;
-                            filtered_y[id] = 0;
-                            tap_frozen[id] = false;
-                            touch_state[id] = TOUCH_IDLE;
-
-                            has_data = true;
+                if (current_scan_time != last_sync_scan_time && last_sync_scan_time != 0) {
+                    for (int i = 0; i < 5; i++) {
+                        if (!finger_seen_this_frame[i]) {
+                            global_tp_state.fingers[i].tip_switch = 0;
+                            last_raw_x[i] = 0;
                         }
                     }
+                    uint8_t count = 0;
+                    for (int i = 0; i < 5; i++) if (global_tp_state.fingers[i].tip_switch) count++;
+                    global_tp_state.actual_count = count;
+                    last_report_time = now;
+                    xQueueOverwrite(tp_queue, &global_tp_state);
                     
-                } else if (data[2] == 0x01) {
-
-                        current_mode = MOUSE_MODE;
-
-                        // ESP_LOG_BUFFER_HEX(TAG, data, sizeof(data));
-
-                        // ESP_LOGI(TAG, "X: %d, y:%d",(int8_t)data[4], (int8_t)data[5]);
-
-                        mouse_current_state.x = (int8_t)data[4];
-                        mouse_current_state.y = (int8_t)data[5];
-
-                        mouse_current_state.buttons = data[3];
-                } else {
-                    break;
+                    memset(finger_seen_this_frame, 0, sizeof(finger_seen_this_frame));
                 }
+                last_sync_scan_time = current_scan_time;
+
+                if (id < 5) {
+                    finger_seen_this_frame[id] = true;
+                    global_tp_state.fingers[id].contact_id = id;
+                    global_tp_state.fingers[id].tip_switch = tip;
+                    global_tp_state.button_mask = (data[11] & 0x01);
+                    global_tp_state.scan_time = hardware_scan_time;
+
+                    uint16_t rx = data[4] | (data[5] << 8);
+                    uint16_t ry = data[6] | (data[7] << 8);
+
+                    if (tip && confidence && rx > 0 && ry > 0) {
+                        if (last_raw_x[id] == 0) {
+                            touch_state[id] = TOUCH_TAP_CANDIDATE;
+                            origin_x[id] = rx; origin_y[id] = ry;
+                            filtered_x[id] = (float)rx; filtered_y[id] = (float)ry;
+                        } else {
+                            int vx = rx - last_raw_x[id];
+                            int vy = ry - last_raw_y[id];
+                            int alpha_speed = abs(vx) + abs(vy);
+
+                            float dynamic_alpha = (alpha_speed < 3) ? 0.25f : (alpha_speed < 12 ? 0.45f : 0.85f);
+                            filtered_x[id] = dynamic_alpha * rx + (1.0f - dynamic_alpha) * filtered_x[id];
+                            filtered_y[id] = dynamic_alpha * ry + (1.0f - dynamic_alpha) * filtered_y[id];
+                        }
+
+                        int dx_raw = rx - last_raw_x[id];
+                        int dy_raw = ry - last_raw_y[id];
+                        if (abs(dx_raw) > abs(dy_raw) * 2 && abs(dy_raw) < 6) ry = last_raw_y[id];
+                        else if (abs(dy_raw) > abs(dx_raw) * 2 && abs(dx_raw) < 6) rx = last_raw_x[id];
+
+                        if (touch_state[id] == TOUCH_TAP_CANDIDATE && 
+                           (abs((int)rx - (int)origin_x[id]) > TAP_DEADZONE || abs((int)ry - (int)origin_y[id]) > TAP_DEADZONE)) {
+                            touch_state[id] = TOUCH_DRAG;
+                            tap_frozen[id] = false;
+                        }
+
+                        if (touch_state[id] == TOUCH_TAP_CANDIDATE) {
+                            if (!tap_frozen[id]) {
+                                tap_frozen[id] = true;
+                                filtered_x[id] = origin_x[id]; filtered_y[id] = origin_y[id];
+                            }
+                            global_tp_state.fingers[id].x = origin_x[id];
+                            global_tp_state.fingers[id].y = origin_y[id];
+                        } else {
+                            tap_frozen[id] = false;
+                            global_tp_state.fingers[id].x = (uint16_t)filtered_x[id];
+                            global_tp_state.fingers[id].y = (uint16_t)filtered_y[id];
+                        }
+
+                        if (!tap_frozen[id] && last_raw_x[id] != 0 && abs((int)rx - (int)last_raw_x[id]) > JUMP_THRESHOLD) {
+                            global_tp_state.fingers[id].x = last_raw_x[id];
+                            global_tp_state.fingers[id].y = last_raw_y[id];
+                        }
+
+                        last_raw_x[id] = rx;
+                        last_raw_y[id] = ry;
+                    } else {
+                        global_tp_state.fingers[id].tip_switch = 0;
+                        global_tp_state.fingers[id].x = last_raw_x[id];
+                        global_tp_state.fingers[id].y = last_raw_y[id];
+
+                        last_raw_x[id] = 0;
+                        last_raw_y[id] = 0;
+                        origin_x[id] = 0;
+                        origin_y[id] = 0;
+                        filtered_x[id] = 0;
+                        filtered_y[id] = 0;
+                        touch_state[id] = TOUCH_IDLE;
+                        
+                        finger_seen_this_frame[id] = true; 
+                    }
+                    has_ptp_data = true;
+                }
+            } 
+            else if (data[2] == 0x01) {
+                current_mode = MOUSE_MODE;
+                mouse_current_state.x = (int8_t)data[4];
+                mouse_current_state.y = (int8_t)data[5];
+                mouse_current_state.buttons = data[3];
+                xQueueOverwrite(mouse_queue, &mouse_current_state);
             }
         }
-
-        if (current_mode == PTP_MODE) {
-            if (has_data || tp_current_state.button_mask) {
-                uint8_t active_count = 0;
-                for (int i = 0; i < 5; i++) {
-                    if (tp_current_state.fingers[i].tip_switch) active_count++;
-                }
-                tp_current_state.actual_count = active_count;
-
-                if (active_count == 0) first_touch_time = 0;
-
-                last_report_time = now;
-                xQueueOverwrite(tp_queue, &tp_current_state);
+        
+        if (has_ptp_data) {
+            if (hardware_scan_time != last_sync_scan_time) {
+                uint8_t count = 0;
+                for (int i = 0; i < 5; i++) if (global_tp_state.fingers[i].tip_switch) count++;
+                global_tp_state.actual_count = count;
+                xQueueOverwrite(tp_queue, &global_tp_state);
+                last_sync_scan_time = hardware_scan_time;
+                memset(finger_seen_this_frame, 0, sizeof(finger_seen_this_frame));
             }
-        } else if (current_mode == MOUSE_MODE) {
-            xQueueOverwrite(mouse_queue, &mouse_current_state);
         }
     }
 }
