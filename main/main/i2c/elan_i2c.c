@@ -146,7 +146,6 @@ void elan_i2c_task(void *arg) {
         while (gpio_get_level(INT_IO) == 0 && safety-- > 0) {
             if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(5)) == ESP_OK) {
                 tp_current_state.button_mask = (data[11] & 0x01) ? 0x01 : 0x00;
-                tp_current_state.scan_time = data[8] | (data[9] << 8);
 
                 // ESP_LOG_BUFFER_HEX(TAG, data, 12);
 
@@ -158,6 +157,8 @@ void elan_i2c_task(void *arg) {
                     uint8_t id = (status & 0xF0) >> 4;
 
                     if (id < 5) {
+
+                        tp_current_state.scan_time = data[8] | (data[9] << 8);
 
                         uint8_t status = data[3];
                         uint8_t id = (status & 0xF0) >> 4;
