@@ -4,7 +4,7 @@
 
 # **这是什么？**
 
-一个基于ESP32-S2 + 触摸板的USB外设设备，支持Microsoft精确式触摸板标准，支持Windows触摸手势。
+一个基于ESP32-S2 + 特定笔记本触摸板的USB外设设备，支持Microsoft精确式触摸板标准，支持Windows触摸手势，支持压感触摸。
 同时包含了一个HP指纹模块，用于Windows Hello指纹登录。
 
 ### **Currently Touchpad Support (already tested):**
