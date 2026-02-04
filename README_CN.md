@@ -4,10 +4,18 @@
 
 # **这是什么？**
 
-一个基于ESP32-S2 + 义隆ELAN触摸板（来自联想库存备件）的USB外设设备，支持Microsoft精确式触摸板标准，支持Windows触摸手势。
+一个基于ESP32-S2 + 触摸板的USB外设设备，支持Microsoft精确式触摸板标准，支持Windows触摸手势。
 同时包含了一个HP指纹模块，用于Windows Hello指纹登录。
 
+### **Currently Touchpad Support (already tested):**
+ - 联想ELAN 33370A触摸板 (板号Rev.A S8974A, 传统机械设计)
+ - 小米book pro 14/16汇顶触摸板 (压感触摸)
+   > 压感触摸板仍在开发中。
+
 ### **硬件开源地址：[基于ESP32的Windows精确式触摸板](https://oshwhub.com/barryblueice/esp32-precision-touchpad)**
+
+> [!CAUTION]
+> 硬件&软件仅适配上面提到的触摸板型号，未经测试的触摸板型号可能会因不兼容导致无法驱动或短路烧毁。
 
 #### **精确式触摸板模式演示：**
 

@@ -7,15 +7,15 @@
 A touchpad peripheral device based on ESP32-S2 + TouchPad. Compatible with Microsoft Percision TouchPad (PTP) standard. Supported Windows Touch Gesture.
 Also include a HP fingerprint module, in order to support fingerprint for Windows Hello.
 
-# **Currently Touchpad Support (already tested):**
+### **Currently Touchpad Support (already tested):**
  - Lenovo ELAN 33370A TouchPad (Rev.A S8974A, traditional mechanical design)
  - XiaoMi book 14/16 pro Goodix TouchPad (Taptic Engine)
-   > Still in development.
+   > Taptic Engine still in development.
 
 ### **Hardware OpenSource Link：[ESP32-Precision-TouchPad](https://oshwhub.com/barryblueice/esp32-precision-touchpad)**
 
 > [!CAUTION]
-> Hardware & software only support the model number of the touchpad mentioned above, untested touchpad models may be incompatible. Use of such models can lead to driver failure or permanent hardware damage caused by short circuits!
+> Hardware & software only support the models of the touchpad mentioned above, untested touchpad models may be incompatible. Use of such models can lead to driver failure or permanent hardware damage caused by short circuits!
 
 #### **PTP Mode Demonstration**:
 
