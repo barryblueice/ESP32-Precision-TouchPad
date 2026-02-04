@@ -4,6 +4,8 @@
 #include "tinyusb.h"
 #include "tusb.h"
 
+#include "sdkconfig.h"
+
 #define REPORTID_TOUCHPAD         0x01
 #define REPORTID_MOUSE            0x02  // 示例中通常是这样排列的
 #define REPORTID_MAX_COUNT        0x03  // Device Capabilities
@@ -49,6 +51,7 @@ const uint8_t mouse_hid_report_descriptor[] = {
 
 };
 
+#if !CONFIG_TOUCHPAD_HAPTIC_FEEDBACK
 const uint8_t ptp_hid_report_descriptor[] = {
 //TOUCH PAD input TLC
     0x05, 0x0d,                         // USAGE_PAGE (Digitizers)
@@ -313,7 +316,7 @@ const uint8_t ptp_hid_report_descriptor[] = {
     0xc0,                               // END_COLLECTION
     0xc0,                               // END_COLLECTION
 };
-
+#endif
 
 // enum {
 //     ITF_NUM_HID,

@@ -1,0 +1,11 @@
+menu "TouchPad Configuration"
+
+    config TOUCHPAD_HAPTIC_FEEDBACK
+    bool "Support Haptic Feedback (HID Page 0x0E)"
+    default n
+    help
+      Enables support for Simple Haptic Controller. 
+      This allows the host to trigger vibration waveforms 
+      for clicks and other UI interactions.
+      
+endmenu
