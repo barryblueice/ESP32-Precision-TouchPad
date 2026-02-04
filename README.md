@@ -4,7 +4,12 @@
 
 # **What's This?**
 
-A touchpad peripheral device based on ESP32-S2 + specific laptop TouchPad. Compatible with Microsoft Percision TouchPad (PTP) standard. Supported Windows Touch Gesture. Supported Taptic Engine.
+A touchpad peripheral device based on ESP32-S2 + specific laptop TouchPad. 
+
+ - Compatible with Microsoft Percision TouchPad (PTP) standard. 
+ - Supported Windows Touch Gesture. 
+ - Supported Taptic Engine.
+ 
 Also include a HP fingerprint module, in order to support fingerprint for Windows Hello.
 
 ### **Currently Touchpad Support (already tested):**
