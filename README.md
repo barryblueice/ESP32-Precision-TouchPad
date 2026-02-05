@@ -6,7 +6,7 @@
 
 A touchpad peripheral device based on ESP32-S2 + specific laptop TouchPad. 
 
- - Compatible with Microsoft Percision TouchPad (PTP) standard. 
+ - Compatible with Microsoft Precision TouchPad (PTP) standard. 
  - Supported Windows Touch Gesture. 
  - Supported Taptic Engine.
  
@@ -75,7 +75,7 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
   - [ ] ~~Adding specific function button~~ (There are no current plans for this function update)
 
   ## Software:
-  - [x] Recognized as a Microsoft Percision TouchPad
+  - [x] Recognized as a Microsoft Precision TouchPad
   - [x] Driving ELAN TouchPad
   - [x] **Switching From Mouse Mode (Only One Finger) to Absolute Mode (Supported Multi Finger), [thanks to @ApprehensiveAnt9858](https://www.reddit.com/r/embedded/comments/1j3c2k6/need_help_getting_and_i2c_hid_elan_touchpad_to/)**
   - [x] Single Touch Support
