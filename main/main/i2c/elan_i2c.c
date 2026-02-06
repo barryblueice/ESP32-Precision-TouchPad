@@ -120,8 +120,8 @@ void elan_i2c_task(void *arg) {
     static int64_t first_touch_time = 0;
     static bool tap_frozen[5] = {false};
     static touch_state_t touch_state[5] = {0};
-    static float filtered_x[5] = {0};
-    static float filtered_y[5] = {0};
+    static uint32_t filtered_x[5] = {0};
+    static uint32_t filtered_y[5] = {0};
     
     uint8_t data[64];
     const uint16_t JUMP_THRESHOLD = 800;
@@ -160,8 +160,6 @@ void elan_i2c_task(void *arg) {
 
                         tp_current_state.scan_time = data[8] | (data[9] << 8);
 
-                        uint8_t status = data[3];
-                        uint8_t id = (status & 0xF0) >> 4;
                         bool tip = (status & 0x01);
                         bool confidence = (status & 0x02);
                         
@@ -173,33 +171,29 @@ void elan_i2c_task(void *arg) {
                         if (is_valid_touch && rx > 0 && ry > 0) {
 
                             if (last_raw_x[id] == 0) {
-                                touch_state[id] = TOUCH_TAP_CANDIDATE;
-                                origin_x[id] = rx;
-                                origin_y[id] = ry;
-                                filtered_x[id] = (float)rx;
-                                filtered_y[id] = (float)ry;
-
-                                if (first_touch_time == 0)
-                                    first_touch_time = now;
+                                filtered_x[id] = rx << 8;
+                                filtered_y[id] = ry << 8;
                             } else {
                                 int vx = rx - last_raw_x[id];
                                 int vy = ry - last_raw_y[id];
                                 int alpha_speed = abs(vx) + abs(vy);
 
-                                float dynamic_alpha;
+                                uint32_t dynamic_alpha;
                                 if (alpha_speed < 3)
-                                    dynamic_alpha = 0.25f;
+                                    dynamic_alpha = 64;
                                 else if (alpha_speed < 12)
-                                    dynamic_alpha = 0.45f;
+                                    dynamic_alpha = 115;
                                 else
-                                    dynamic_alpha = 0.85f;
+                                    dynamic_alpha = 218;
 
-                                filtered_x[id] = dynamic_alpha * rx + (1.0f - dynamic_alpha) * filtered_x[id];
-                                filtered_y[id] = dynamic_alpha * ry + (1.0f - dynamic_alpha) * filtered_y[id];
+                                filtered_x[id] = (dynamic_alpha * (rx << 8) + 
+                                                    (256 - dynamic_alpha) * filtered_x[id]) >> 8;
+                                filtered_y[id] = (dynamic_alpha * (ry << 8) + 
+                                                    (256 - dynamic_alpha) * filtered_y[id]) >> 8;
                             }
 
-                            uint16_t fx = (uint16_t)filtered_x[id];
-                            uint16_t fy = (uint16_t)filtered_y[id];
+                            uint16_t fx = (uint16_t)(filtered_x[id] >> 8);
+                            uint16_t fy = (uint16_t)(filtered_y[id] >> 8);
 
                             int dx_raw = rx - last_raw_x[id];
                             int dy_raw = ry - last_raw_y[id];
