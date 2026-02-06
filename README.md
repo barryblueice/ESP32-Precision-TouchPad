@@ -15,7 +15,7 @@ Also include a HP fingerprint module, in order to support fingerprint for Window
 
 ### **Currently Touchpad Support (already tested):**
  - Lenovo ELAN 33370A TouchPad (Rev.A S8974A, traditional mechanical design)
- - XiaoMi book 14/16 pro Goodix TouchPad (Taptic Engine)
+ - XiaoMi book 14/16 pro Goodix TouchPad (Partly support)
 
 ### **Hardware OpenSource Link：[ESP32-Precision-TouchPad](https://oshwhub.com/barryblueice/esp32-precision-touchpad)**
 
@@ -24,6 +24,7 @@ Also include a HP fingerprint module, in order to support fingerprint for Window
 
 > [!IMPORTANT]  
 > The pressure-sensitive touchpad promoted by Xiaomi merely replaced the traditional mechanical structure with a pressure-sensitive motor trigger. It is not a genuine pressure-sensing recognition (there is no pressure-sensing data).
+> Due to the lack of relevant data, the reverse engineering of Goodix is currently underway.
 
 #### **PTP Mode Demonstration**:
 

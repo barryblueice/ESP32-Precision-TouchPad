@@ -15,7 +15,7 @@
 
 ### **Currently Touchpad Support (already tested):**
  - 联想ELAN 33370A触摸板 (板号Rev.A S8974A, 传统机械设计)
- - 小米book pro 14/16汇顶触摸板 (压感触摸)
+ - 小米book pro 14/16汇顶触摸板 (支持不全)
    
 
 ### **硬件开源地址：[基于ESP32的Windows精确式触摸板](https://oshwhub.com/barryblueice/esp32-precision-touchpad)**
@@ -25,6 +25,7 @@
 
 > [!IMPORTANT]  
 > 小米所宣发的压感触摸板只是将传统的机械结构更换为了压感马达触发。并不是真正的压感识别（没有压感数据）。
+> 由于资料缺失，目前goodix的逆向工程正在推进中。
 
 #### **精确式触摸板模式演示：**
 
