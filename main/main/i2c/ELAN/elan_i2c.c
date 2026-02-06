@@ -118,7 +118,6 @@ void elan_i2c_task(void *arg) {
     static uint16_t origin_x[5] = {0};
     static uint16_t origin_y[5] = {0};
     static int64_t last_report_time = 0;
-    static int64_t first_touch_time = 0;
     static bool tap_frozen[5] = {false};
     static touch_state_t touch_state[5] = {0};
     static uint32_t filtered_x[5] = {0};
@@ -303,8 +302,6 @@ void elan_i2c_task(void *arg) {
                     if (tp_current_state.fingers[i].tip_switch) active_count++;
                 }
                 tp_current_state.actual_count = active_count;
-
-                if (active_count == 0) first_touch_time = 0;
 
                 last_report_time = now;
                 xQueueOverwrite(tp_queue, &tp_current_state);

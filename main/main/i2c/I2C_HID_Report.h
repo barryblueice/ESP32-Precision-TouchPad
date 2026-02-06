@@ -96,6 +96,9 @@ extern esp_err_t elan_activate_mouse();
     #define activate_mouse elan_activate_mouse
     #define PHYSICAL_X 0x26, 0x5F, 0x0E
     #define PHYSICAL_Y 0x26, 0xD5, 0x08
+#elif CONFIG_MI_GOODIX_HAPTIC_ENGINE
+    #define PHYSICAL_X 0x26, 0xAC, 0x0D
+    #define PHYSICAL_Y 0x26, 0x98, 0x08
 #endif
 
 #endif
