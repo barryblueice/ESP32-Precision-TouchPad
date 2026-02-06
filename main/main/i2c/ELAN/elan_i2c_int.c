@@ -24,7 +24,7 @@ static void IRAM_ATTR tp_gpio_isr_handler(void* arg) {
     }
 }
 
-void tp_interrupt_init(void) {
+void elan_tp_interrupt_init(void) {
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_NEGEDGE,
         .mode = GPIO_MODE_INPUT,

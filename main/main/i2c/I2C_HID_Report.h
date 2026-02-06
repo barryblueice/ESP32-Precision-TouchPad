@@ -88,17 +88,34 @@ extern volatile uint8_t current_mode;
 extern i2c_master_dev_handle_t dev_handle; 
 extern i2c_master_bus_handle_t bus_handle;
 
+extern void elan_i2c_task(void *arg);
+extern void goodix_i2c_task(void *arg);
+extern void elan_tp_interrupt_init(void);
+extern void goodix_tp_interrupt_init(void);
+extern void elan_i2c_init();
+extern void goodix_i2c_init(void);
+
 extern esp_err_t elan_activate_ptp();
 extern esp_err_t elan_activate_mouse();
+extern esp_err_t goodix_activate_ptp();
+extern esp_err_t goodix_activate_mouse();
 
 #if CONFIG_ELAN_LENOVO_33370A
     #define activate_ptp elan_activate_ptp
     #define activate_mouse elan_activate_mouse
     #define PHYSICAL_X 0x26, 0x5F, 0x0E
     #define PHYSICAL_Y 0x26, 0xD5, 0x08
+    #define tp_i2c_task elan_i2c_task
+    #define i2c_tp_init elan_i2c_init
+    #define i2c_tp_int_init elan_tp_interrupt_init
 #elif CONFIG_MI_GOODIX_HAPTIC_ENGINE
+    #define activate_ptp goodix_activate_ptp
+    #define activate_mouse goodix_activate_mouse
     #define PHYSICAL_X 0x26, 0xAC, 0x0D
     #define PHYSICAL_Y 0x26, 0x98, 0x08
+    #define tp_i2c_task goodix_i2c_task
+    #define i2c_tp_init goodix_i2c_init
+    #define i2c_tp_int_init goodix_tp_interrupt_init
 #endif
 
 #endif
