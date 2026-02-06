@@ -22,4 +22,18 @@ menu "TouchPad Configuration"
         via Feature Report 64. 
         The hardware supports a range of 110g to 190g.
 
+    choice
+        prompt "Select TouchPad Model"
+        default ELAN_LENOVO_33370A
+        help
+        Select TouchPad model what you used. Different model may use different solution to translate hid data.
+
+    config ELAN_LENOVO_33370A
+        bool "Lenovo ELAN 33370A TouchPad (Rev.A S8974A)"
+
+    config MI_GOODIX_HAPTIC_ENGINE
+        bool "XiaoMi book 14/16 pro Goodix TouchPad"
+
+    endchoice
+
 endmenu

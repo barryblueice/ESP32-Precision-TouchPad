@@ -1,5 +1,5 @@
-#ifndef ELAN_I2C_H
-#define ELAN_I2C_H
+#ifndef I2C_HID_REPORT_H
+#define I2C_HID_REPORT_H
 
 #include "driver/i2c_master.h"
 #include "freertos/FreeRTOS.h"
@@ -85,14 +85,17 @@ typedef struct __attribute__((packed)) {
 
 extern volatile uint8_t current_mode;
 
-void elan_i2c_task(void *arg);
-void tp_interrupt_init(void);
-void elan_i2c_init(void);
-
-esp_err_t elan_activate_ptp();
-esp_err_t elan_activate_mouse();
-
 extern i2c_master_dev_handle_t dev_handle; 
 extern i2c_master_bus_handle_t bus_handle;
+
+extern esp_err_t elan_activate_ptp();
+extern esp_err_t elan_activate_mouse();
+
+#if CONFIG_ELAN_LENOVO_33370A
+    #define activate_ptp elan_activate_ptp
+    #define activate_mouse elan_activate_mouse
+    #define PHYSICAL_X 0x26, 0x5F, 0x0E
+    #define PHYSICAL_Y 0x26, 0xD5, 0x08
+#endif
 
 #endif

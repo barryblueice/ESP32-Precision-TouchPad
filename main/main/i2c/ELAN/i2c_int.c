@@ -6,7 +6,8 @@
 #include "esp_log.h"
 #include "driver/i2c_master.h"
 
-#include "i2c/elan_i2c.h"
+#include "i2c/ELAN/elan_i2c.h"
+#include "i2c/I2C_HID_Report.h"
 
 #define TAG "TP_INT"
 

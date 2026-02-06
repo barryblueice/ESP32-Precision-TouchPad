@@ -1,4 +1,4 @@
-#include "i2c/elan_i2c.h"
+#include "i2c/I2C_HID_Report.h"
 #include "wireless/wireless.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

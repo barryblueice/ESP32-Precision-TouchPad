@@ -9,9 +9,11 @@
 
 #include "sdkconfig.h"
 
-#if !CONFIG_TOUCHPAD_HAPTIC_FEEDBACK
-#include "i2c/elan_i2c.h"
+#if CONFIG_ELAN_LENOVO_33370A
+    #include "i2c/ELAN/elan_i2c.h"
 #endif
+
+#include "i2c/I2C_HID_Report.h"
 
 void app_main(void) {
 
@@ -35,9 +37,9 @@ void app_main(void) {
 
     usbhid_init();
 
-    #ifdef CONFIG_TOUCHPAD_HAPTIC_FEEDBACK
-    #else
-        xTaskCreate(elan_i2c_task, "elan_i2c", 4096, NULL, 10, NULL);        
+    #ifdef CONFIG_ELAN_LENOVO_33370A
+        xTaskCreate(elan_i2c_task, "elan_i2c", 4096, NULL, 10, NULL);
+        
     #endif
 
     xTaskCreate(usbhid_task, "hid", 4096, NULL, 12, NULL);

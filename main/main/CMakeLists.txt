@@ -5,8 +5,8 @@ idf_component_register(
         "wireless/vbus_det.c"
         "wireless/heartbeat.c"
         "wireless/broadcast.c"
-        "i2c/elan_i2c.c"
-        "i2c/i2c_int.c"
+        "i2c/ELAN/elan_i2c.c"
+        "i2c/ELAN/i2c_int.c"
         "nvs/ptp_nvs.c"
     INCLUDE_DIRS "."
     PRIV_REQUIRES esp_driver_gpio

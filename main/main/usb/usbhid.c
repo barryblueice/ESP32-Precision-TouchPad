@@ -15,7 +15,7 @@
 
 #include "math.h"
 
-#include "i2c/elan_i2c.h"
+#include "i2c/I2C_HID_Report.h"
 
 #include "usb/usbhid.h"
 
@@ -119,18 +119,18 @@ void usb_mount_task(void *arg) {
             if (ptp_input_mode != last_ptp_input_mode) {
                 switch (ptp_input_mode) {
                 case 0x03:
-                    ESP_LOGI(TAG, "Mode 0x03 detected: Activating ELAN PTP");
+                    ESP_LOGI(TAG, "Mode 0x03 detected: Activating PTP");
                     current_mode = PTP_MODE;
-                    elan_activate_ptp();
+                    activate_ptp();
                     // ESP_LOGI(TAG, "Mode 0x01 detected: Activating ELAN MOUSE");
                     // current_mode = MOUSE_MODE;
                     // elan_activate_mouse();
                     break;
                 case 0x00:
                     if (wireless_mode == 1) {
-                        ESP_LOGI(TAG, "Mode 0x01 detected: Activating ELAN MOUSE");
+                        ESP_LOGI(TAG, "Mode 0x01 detected: Activating MOUSE");
                         current_mode = MOUSE_MODE;
-                        elan_activate_mouse();
+                        activate_mouse();
                         break;
                     }
                 default:
@@ -148,7 +148,6 @@ void usb_mount_task(void *arg) {
 void usbhid_task(void *arg) {
     tp_multi_msg_t msg;
     mouse_msg_t mouse_msg;
-    static uint16_t last_scan_time = 0;
     wireless_msg_t pkt = {0};
 
     while (1) {

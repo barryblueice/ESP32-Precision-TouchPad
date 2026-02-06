@@ -1,5 +1,6 @@
 #include "wireless/wireless.h"
-#include "i2c/elan_i2c.h"
+#include "i2c/I2C_HID_Report.h"
+#include "i2c/ELAN/elan_i2c.h"
 #include "esp_wifi.h"
 #include "esp_now.h"
 #include "esp_log.h"
@@ -17,14 +18,14 @@ void wifi_now_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data,
             if (received_cmd != last_ptp_input_mode) {
 
                 if (received_cmd == PTP_MODE) {
-                    ESP_LOGI(TAG, "Wireless Mode 0x03 detected: Activating ELAN PTP");
+                    ESP_LOGI(TAG, "Wireless Mode 0x03 detected: Activating PTP");
                     current_mode = PTP_MODE;
-                    elan_activate_ptp();
+                    activate_ptp();
                 } 
                 else if (received_cmd == MOUSE_MODE) {
-                    ESP_LOGI(TAG, "Wireless Mode 0x01 detected: Activating ELAN Mouse");
+                    ESP_LOGI(TAG, "Wireless Mode 0x01 detected: Activating Mouse");
                     current_mode = MOUSE_MODE;
-                    elan_activate_mouse();
+                    activate_mouse();
                 }
             }
         }

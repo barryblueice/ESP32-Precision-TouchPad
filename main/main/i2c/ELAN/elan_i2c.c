@@ -7,7 +7,8 @@
 #include "esp_log.h"
 #include "esp_timer.h"
 
-#include "i2c/elan_i2c.h"
+#include "i2c/ELAN/elan_i2c.h"
+#include "i2c/I2C_HID_Report.h"
 
 #include "usb/usbhid.h"
 
