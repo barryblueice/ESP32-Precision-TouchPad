@@ -33,7 +33,7 @@ void app_main(void) {
 
     usbhid_init();
 
-    xTaskCreate(tp_i2c_task, "goodix_i2c", 4096, NULL, 10, NULL);
+    xTaskCreate(tp_i2c_task, "i2c_task", 4096, NULL, 10, NULL);
 
     xTaskCreate(usbhid_task, "hid", 4096, NULL, 12, NULL);
 
