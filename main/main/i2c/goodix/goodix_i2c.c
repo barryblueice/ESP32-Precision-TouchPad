@@ -143,99 +143,100 @@ void goodix_i2c_task(void *arg) {
 
         int safety = 10;
         while (gpio_get_level(INT_IO) == 0 && safety-- > 0) {
+            
             if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(5)) == ESP_OK) {
-                
-                if (data[2] == 0x04) {
 
+                if (data[2] == 0x04) {
                     current_mode = PTP_MODE;
                     tp_current_state.scan_time = data[28] | (data[29] << 8);
                     tp_current_state.button_mask = (data[31] & 0x01) ? 0x01 : 0x00;
+                    tp_current_state.actual_count = data[30]; 
 
-                    if (data[3] == 0x01) {
+                    for (int id = 0; id < 5; id++) {
+                        uint8_t *f_ptr = &data[3 + (id * 5)];
+                        uint8_t status = f_ptr[0];
+                        bool is_valid_touch = (status & 0x01); 
 
-                        tp_current_state.actual_count = 0;
+                        uint16_t rx = f_ptr[1] | (f_ptr[2] << 8);
+                        uint16_t ry = f_ptr[3] | (f_ptr[4] << 8);
 
-                    } else {
-                        
-                        tp_current_state.actual_count = data[30]; 
-
-                        for (int id = 0; id < 5; id++) {
-                            uint8_t *f_ptr = &data[3 + (id * 5)];
-                            uint8_t status = f_ptr[0];
-                            
-                            bool is_valid_touch = (status & 0x01); 
-
-                            uint16_t rx = f_ptr[1] | (f_ptr[2] << 8);
-                            uint16_t ry = f_ptr[3] | (f_ptr[4] << 8);
-
-                            if (is_valid_touch && rx > 0 && ry > 0) {
-                                if (last_raw_x[id] == 0) {
-                                    filtered_x[id] = rx << 8;
-                                    filtered_y[id] = ry << 8;
-                                    origin_x[id] = rx;
-                                    origin_y[id] = ry;
-                                } else {
-                                    int vx = rx - last_raw_x[id];
-                                    int vy = ry - last_raw_y[id];
-                                    int alpha_speed = abs(vx) + abs(vy);
-
-                                    uint32_t dynamic_alpha;
-                                    if (alpha_speed < 3) dynamic_alpha = 64;
-                                    else if (alpha_speed < 12) dynamic_alpha = 115;
-                                    else dynamic_alpha = 218;
-
-                                    filtered_x[id] = (dynamic_alpha * (rx << 8) + (256 - dynamic_alpha) * filtered_x[id]) >> 8;
-                                    filtered_y[id] = (dynamic_alpha * (ry << 8) + (256 - dynamic_alpha) * filtered_y[id]) >> 8;
+                        if (is_valid_touch && rx > 0 && ry > 0) {
+                            if (last_raw_x[id] != 0) {
+                                int dx_raw = rx - last_raw_x[id];
+                                int dy_raw = ry - last_raw_y[id];
+                                if (abs(dx_raw) > abs(dy_raw) * 2 && abs(dy_raw) < 6) {
+                                    ry = last_raw_y[id];
+                                } else if (abs(dy_raw) > abs(dx_raw) * 2 && abs(dx_raw) < 6) {
+                                    rx = last_raw_x[id];
                                 }
+                            }
 
-                                uint16_t fx = (uint16_t)(filtered_x[id] >> 8);
-                                uint16_t fy = (uint16_t)(filtered_y[id] >> 8);
-
-                                int dx = abs((int)rx - (int)origin_x[id]);
-                                int dy = abs((int)ry - (int)origin_y[id]);
-
-                                if (touch_state[id] == TOUCH_TAP_CANDIDATE && (dx > TAP_DEADZONE || dy > TAP_DEADZONE)) {
-                                    touch_state[id] = TOUCH_DRAG;
-                                    tap_frozen[id] = false;
-                                }
-
-                                if (touch_state[id] == TOUCH_TAP_CANDIDATE) {
-                                    if (!tap_frozen[id]) {
-                                        tap_frozen[id] = true;
-                                        filtered_x[id] = origin_x[id] << 8;
-                                        filtered_y[id] = origin_y[id] << 8;
-                                    }
-                                    tp_current_state.fingers[id].x = origin_x[id];
-                                    tp_current_state.fingers[id].y = origin_y[id];
-                                } else {
-                                    tap_frozen[id] = false;
-                                    tp_current_state.fingers[id].x = fx;
-                                    tp_current_state.fingers[id].y = fy;
-                                }
-
-                                if (!tap_frozen[id] && last_raw_x[id] != 0 && abs((int)rx - (int)last_raw_x[id]) > JUMP_THRESHOLD) {
-                                    tp_current_state.fingers[id].x = last_raw_x[id];
-                                    tp_current_state.fingers[id].y = last_raw_y[id];
-                                }
-
-                                last_raw_x[id] = rx;
-                                last_raw_y[id] = ry;
-                                tp_current_state.fingers[id].tip_switch = 1;
-                                tp_current_state.fingers[id].contact_id = id;
-                                has_data = true;
+                            if (last_raw_x[id] == 0) {
+                                filtered_x[id] = rx << 8;
+                                filtered_y[id] = ry << 8;
+                                origin_x[id] = rx;
+                                origin_y[id] = ry;
                             } else {
-                                tp_current_state.fingers[id].tip_switch = 0;
+                                int vx = rx - last_raw_x[id];
+                                int vy = ry - last_raw_y[id];
+                                int alpha_speed = abs(vx) + abs(vy);
+
+                                uint32_t dynamic_alpha;
+                                if (alpha_speed < 3) dynamic_alpha = 64;
+                                else if (alpha_speed < 12) dynamic_alpha = 115;
+                                else dynamic_alpha = 218;
+
+                                filtered_x[id] = (dynamic_alpha * (rx << 8) + (256 - dynamic_alpha) * filtered_x[id]) >> 8;
+                                filtered_y[id] = (dynamic_alpha * (ry << 8) + (256 - dynamic_alpha) * filtered_y[id]) >> 8;
+                            }
+
+                            uint16_t fx = (uint16_t)(filtered_x[id] >> 8);
+                            uint16_t fy = (uint16_t)(filtered_y[id] >> 8);
+
+                            int dx = abs((int)rx - (int)origin_x[id]);
+                            int dy = abs((int)ry - (int)origin_y[id]);
+
+                            if (touch_state[id] == TOUCH_TAP_CANDIDATE && (dx > TAP_DEADZONE || dy > TAP_DEADZONE)) {
+                                touch_state[id] = TOUCH_DRAG;
+                                tap_frozen[id] = false;
+                            }
+
+                            if (touch_state[id] == TOUCH_TAP_CANDIDATE) {
+                                if (!tap_frozen[id]) {
+                                    tap_frozen[id] = true;
+                                    filtered_x[id] = origin_x[id] << 8;
+                                    filtered_y[id] = origin_y[id] << 8;
+                                }
+                                tp_current_state.fingers[id].x = origin_x[id];
+                                tp_current_state.fingers[id].y = origin_y[id];
+                            } else {
+                                tap_frozen[id] = false;
+                                tp_current_state.fingers[id].x = fx;
+                                tp_current_state.fingers[id].y = fy;
+                            }
+
+                            if (!tap_frozen[id] && last_raw_x[id] != 0 && abs((int)rx - (int)last_raw_x[id]) > JUMP_THRESHOLD) {
                                 tp_current_state.fingers[id].x = last_raw_x[id];
                                 tp_current_state.fingers[id].y = last_raw_y[id];
-                                tp_current_state.fingers[id].contact_id = id;
-
-                                last_raw_x[id] = 0; last_raw_y[id] = 0;
-                                origin_x[id] = 0; origin_y[id] = 0;
-                                filtered_x[id] = 0; filtered_y[id] = 0;
-                                tap_frozen[id] = false;
-                                touch_state[id] = TOUCH_IDLE;
-                                has_data = true; 
                             }
+
+                            last_raw_x[id] = rx;
+                            last_raw_y[id] = ry;
+                            tp_current_state.fingers[id].tip_switch = 1;
+                            tp_current_state.fingers[id].contact_id = id;
+                            has_data = true;
+                        } else {
+                            tp_current_state.fingers[id].tip_switch = 0;
+                            tp_current_state.fingers[id].x = last_raw_x[id];
+                            tp_current_state.fingers[id].y = last_raw_y[id];
+                            tp_current_state.fingers[id].contact_id = id;
+
+                            last_raw_x[id] = 0; last_raw_y[id] = 0;
+                            origin_x[id] = 0; origin_y[id] = 0;
+                            filtered_x[id] = 0; filtered_y[id] = 0;
+                            tap_frozen[id] = false;
+                            touch_state[id] = TOUCH_IDLE;
+                            has_data = true; 
                         }
                     }
                 } else if (data[2] == 0x01) {
@@ -244,8 +245,6 @@ void goodix_i2c_task(void *arg) {
                     mouse_current_state.y = (int8_t)data[5];
                     mouse_current_state.buttons = data[3];
                     has_data = true;
-                } else {
-                    break;
                 }
             }
         }
@@ -253,6 +252,7 @@ void goodix_i2c_task(void *arg) {
         if (has_data) {
             last_report_time = now;
             if (current_mode == PTP_MODE) {
+                if (data[3] == 0x01) tp_current_state.actual_count = 0;
                 xQueueOverwrite(tp_queue, &tp_current_state);
             } else if (current_mode == MOUSE_MODE) {
                 xQueueOverwrite(mouse_queue, &mouse_current_state);
