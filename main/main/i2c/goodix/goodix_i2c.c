@@ -21,7 +21,7 @@ QueueHandle_t mouse_queue = NULL;
 QueueSetHandle_t main_queue_set = NULL;
 volatile uint8_t current_mode = MOUSE_MODE;
 
-#define I2C_ADDR 0x15
+#define I2C_ADDR 0x2c
 #define RST_IO   3
 #define INT_IO   4
 
