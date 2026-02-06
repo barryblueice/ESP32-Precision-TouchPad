@@ -12,7 +12,6 @@ __pycache__/
 **/__pycache__/
 output/
 log/
-test/
 storage/
 build/
 managed_components/
