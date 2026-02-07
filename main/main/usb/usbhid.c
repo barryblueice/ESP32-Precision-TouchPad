@@ -223,6 +223,8 @@ void usbhid_task(void *arg) {
 
                 report.buttons = (msg.button_mask > 0) ? 0x01 : 0x00;
 
+                // ESP_DRAM_LOGI(TAG, "X: %d, Y:%d", report.fingers[0].x, report.fingers[0].y);
+
                 if (wireless_mode == 1) {
                     if (tud_hid_n_ready(0)) {
                         tud_hid_n_report(0, REPORTID_TOUCHPAD, &report, sizeof(report));

@@ -102,7 +102,7 @@ void goodix_i2c_init(void) {
 }
 
 #define TAP_DEADZONE 30
-#define SETTLING_MS 15
+#define SETTLING_MS 50
 #define FILTER_ALPHA 0.5f
 
 typedef enum {
@@ -124,7 +124,6 @@ void goodix_i2c_task(void *arg) {
     
     uint8_t data[64];
     const uint16_t JUMP_THRESHOLD = 800;
-    const int64_t STALE_MS = 50;
 
     while (1) {
         ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1)); 
@@ -134,7 +133,7 @@ void goodix_i2c_task(void *arg) {
         bool has_data = false;
         int64_t now = esp_timer_get_time() / 1000;
 
-        if (now - last_report_time > STALE_MS) {
+        if (now - last_report_time > SETTLING_MS) {
             for (int i = 0; i < 5; i++) { 
                 last_raw_x[i] = 0; last_raw_y[i] = 0; 
                 origin_x[i] = 0; origin_y[i] = 0;
@@ -159,6 +158,10 @@ void goodix_i2c_task(void *arg) {
 
                         uint16_t rx = f_ptr[1] | (f_ptr[2] << 8);
                         uint16_t ry = f_ptr[3] | (f_ptr[4] << 8);
+
+                        int status_idx = 3 + (id * 5);
+                        uint8_t status_byte = data[status_idx];
+                        uint8_t action = (status_byte & 0x0F);
 
                         if (is_valid_touch && rx > 0 && ry > 0) {
                             if (last_raw_x[id] != 0) {
@@ -237,6 +240,13 @@ void goodix_i2c_task(void *arg) {
                             tap_frozen[id] = false;
                             touch_state[id] = TOUCH_IDLE;
                             has_data = true; 
+                        }
+
+                        if (action == 1) {
+                            if (data[3] == 0x01) {
+                                tp_current_state.actual_count = 0;
+                            }
+                            tp_current_state.fingers[id].tip_switch = 0;
                         }
                     }
                 } else if (data[2] == 0x01) {
