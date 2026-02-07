@@ -102,8 +102,7 @@ void elan_i2c_init(void) {
 }
 
 #define TAP_DEADZONE 30
-#define SETTLING_MS 15
-#define FILTER_ALPHA 0.5f
+#define STALE_MS     50
 
 typedef enum {
     TOUCH_IDLE,
@@ -126,7 +125,6 @@ void elan_i2c_task(void *arg) {
     
     uint8_t data[64];
     const uint16_t JUMP_THRESHOLD = 800;
-    const int64_t STALE_MS = 50;
 
     while (1) {
         ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1)); 
