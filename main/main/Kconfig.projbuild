@@ -7,16 +7,19 @@ menu "TouchPad Configuration"
             Enter the MAC address of your PTP 2.4G Reciever in XX:XX:XX:XX:XX:XX format.
 
     config TOUCHPAD_HAPTIC_FEEDBACK
-    bool "Support Haptic Feedback (HID Page 0x0E)"
-    default n
-    help
-      Enables support for Simple Haptic Controller. 
-      This allows the host to trigger vibration waveforms 
-      for clicks and other UI interactions.
+        bool "Support Haptic Feedback (HID Page 0x0E)"
+        depends on n
+        default n
+        help
+        Enables support for Simple Haptic Controller. 
+        This allows the host to trigger vibration waveforms 
+        for clicks and other UI interactions.
 
     config TOUCHPAD_PRESSURE_REPORTING
         bool "Support Pressure Threshold Configuration"
+        depends on n
         default n
+        
         help
         Allows the host to configure the button press threshold 
         via Feature Report 64. 
