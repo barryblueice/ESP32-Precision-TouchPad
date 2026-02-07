@@ -303,6 +303,8 @@ void elan_i2c_task(void *arg) {
                 }
                 tp_current_state.actual_count = active_count;
 
+                if (data[3] == 0x01) tp_current_state.actual_count = 0;
+
                 last_report_time = now;
                 xQueueOverwrite(tp_queue, &tp_current_state);
             }
