@@ -306,16 +306,27 @@ void elan_i2c_task(void *arg) {
                 switch (finger_life_status) {
                     case 0x01:
                         tp_current_state.actual_count = 0;
-                        tp_current_state.fingers[0].tip_switch = 0;
+                        for (int i = 0; i < 5; i++) {
+                            tp_current_state.fingers[i].tip_switch = 0;
+                        } 
                         break;
                     case 0x11:
-                        tp_current_state.fingers[1].tip_switch = 0;
+                        // tp_current_state.fingers[1].tip_switch = 0;
+                        for (int i = 1; i < 5; i++) {
+                            tp_current_state.fingers[i].tip_switch = 0;
+                        } 
                         break;
                     case 0x21:
-                        tp_current_state.fingers[2].tip_switch = 0;
+                        // tp_current_state.fingers[2].tip_switch = 0;
+                        for (int i = 2; i < 5; i++) {
+                            tp_current_state.fingers[i].tip_switch = 0;
+                        } 
                         break;
                     case 0x31:
-                        tp_current_state.fingers[3].tip_switch = 0;
+                        // tp_current_state.fingers[3].tip_switch = 0;
+                        for (int i = 3; i < 5; i++) {
+                            tp_current_state.fingers[i].tip_switch = 0;
+                        } 
                         break;
                     case 0x41:
                         tp_current_state.fingers[4].tip_switch = 0;
