@@ -33,6 +33,9 @@ menu "TouchPad Configuration"
 
     config ELAN_LENOVO_33370A
         bool "Lenovo ELAN 33370A TouchPad (Rev.A S8974A)"
+    
+    config HANTICK_LENOVO_HTT5288
+        bool "Lenovo HanTick HTT5288 TouchPad (HTX11974TI)"
 
     config MI_GOODIX_HAPTIC_ENGINE
         bool "XiaoMi book 14/16 pro Goodix TouchPad"
