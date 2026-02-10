@@ -121,38 +121,44 @@ void goodix_i2c_task(void *arg) {
     static touch_state_t touch_state[5] = {0};
     static uint32_t filtered_x[5] = {0};
     static uint32_t filtered_y[5] = {0};
-    
+
+    // 多点历史，用于严格异常判断
+    #define HISTORY_LEN 3
+    static uint16_t raw_x_history[5][HISTORY_LEN] = {0};
+    static uint16_t raw_y_history[5][HISTORY_LEN] = {0};
+
     uint8_t data[64];
     const uint16_t JUMP_THRESHOLD = 800;
 
     while (1) {
-        ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1)); 
+        ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1));
 
-        tp_multi_msg_t tp_current_state = {0}; 
+        tp_multi_msg_t tp_current_state = {0};
         mouse_msg_t mouse_current_state = {0};
         bool has_data = false;
         int64_t now = esp_timer_get_time() / 1000;
 
         if (now - last_report_time > SETTLING_MS) {
-            for (int i = 0; i < 5; i++) { 
-                last_raw_x[i] = 0; last_raw_y[i] = 0; 
+            for (int i = 0; i < 5; i++) {
+                last_raw_x[i] = 0; last_raw_y[i] = 0;
                 origin_x[i] = 0; origin_y[i] = 0;
+                for (int h = 0; h < HISTORY_LEN; h++) {
+                    raw_x_history[i][h] = 0;
+                    raw_y_history[i][h] = 0;
+                }
             }
         }
 
         int safety = 10;
         while (gpio_get_level(INT_IO) == 0 && safety-- > 0) {
-            
             if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(5)) == ESP_OK) {
-
                 if (data[2] == 0x04) {
                     current_mode = PTP_MODE;
                     tp_current_state.scan_time = data[28] | (data[29] << 8);
                     tp_current_state.button_mask = (data[31] & 0x01) ? 0x01 : 0x00;
-                    tp_current_state.actual_count = data[30]; 
+                    tp_current_state.actual_count = data[30];
 
                     for (int id = 0; id < 5; id++) {
-                        
                         uint8_t *f_ptr = &data[3 + (id * 5)];
                         uint8_t status = f_ptr[0];
                         bool is_valid_touch = (status & 0x01);
@@ -165,22 +171,38 @@ void goodix_i2c_task(void *arg) {
                             continue;
                         }
 
-                        static uint16_t last2_raw_x[5] = {0};
-                        static uint16_t last2_raw_y[5] = {0};
-                        const int MAX_JUMP2 = 500*500;
+                        int16_t predict_x = raw_x_history[id][HISTORY_LEN-1];
+                        int16_t predict_y = raw_y_history[id][HISTORY_LEN-1];
+                        int dx_sum = 0, dy_sum = 0, count_valid = 0;
 
-                        if (last_raw_x[id] != 0) {
-                            int16_t predict_x = last_raw_x[id] + (last_raw_x[id] - last2_raw_x[id]);
-                            int16_t predict_y = last_raw_y[id] + (last_raw_y[id] - last2_raw_y[id]);
+                        for (int h = 1; h < HISTORY_LEN; h++) {
+                            if (raw_x_history[id][h-1] && raw_x_history[id][h]) {
+                                dx_sum += raw_x_history[id][h] - raw_x_history[id][h-1];
+                                dy_sum += raw_y_history[id][h] - raw_y_history[id][h-1];
+                                count_valid++;
+                            }
+                        }
 
+                        if (count_valid > 0) {
+                            predict_x += dx_sum / count_valid;
+                            predict_y += dy_sum / count_valid;
+
+                            const int MAX_JUMP2_STRICT = 300*300;
                             int dx_jump = rx - predict_x;
                             int dy_jump = ry - predict_y;
 
-                            if (dx_jump * dx_jump + dy_jump * dy_jump > MAX_JUMP2) {
-                                rx = last_raw_x[id];
-                                ry = last_raw_y[id];
+                            if (dx_jump*dx_jump + dy_jump*dy_jump > MAX_JUMP2_STRICT) {
+                                rx = raw_x_history[id][HISTORY_LEN-1];
+                                ry = raw_y_history[id][HISTORY_LEN-1];
                             }
                         }
+
+                        for (int h = 0; h < HISTORY_LEN-1; h++) {
+                            raw_x_history[id][h] = raw_x_history[id][h+1];
+                            raw_y_history[id][h] = raw_y_history[id][h+1];
+                        }
+                        raw_x_history[id][HISTORY_LEN-1] = rx;
+                        raw_y_history[id][HISTORY_LEN-1] = ry;
 
                         if (last_raw_x[id] == 0) {
                             filtered_x[id] = rx << 8;
@@ -231,8 +253,6 @@ void goodix_i2c_task(void *arg) {
                             tp_current_state.fingers[id].y = last_raw_y[id];
                         }
 
-                        last2_raw_x[id] = last_raw_x[id];
-                        last2_raw_y[id] = last_raw_y[id];
                         last_raw_x[id] = rx;
                         last_raw_y[id] = ry;
 
