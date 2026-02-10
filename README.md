@@ -105,6 +105,7 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
  - Cannot perform rapid and consecutive clicks.
  - Due to processor limitation, Original PTP Mode can only support wire connect/2.4G wireless mode. <br>Bluetooth mode needs to use ESP32-S3.
  - XiaoMi book 2022 14/16 pro Goodix GT7863 TouchPad requires more algorithm support and optimization.
+   The current operation is rather sluggish, not as smooth as the ELAN touchpad.
 
 ***
 
