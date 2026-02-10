@@ -13,9 +13,9 @@
 
 同时包含了一个HP指纹模块，用于Windows Hello指纹登录。
 
-### **Currently Touchpad Support (already tested):**
+### **目前支持的触摸板型号（已通过测试）:**
  - 联想ELAN 33370A触摸板 (板号Rev.A S8974A, 传统机械设计)
- - 小米book pro 14/16 汇顶 GT7863 压感触摸板（支持不全）
+ - 小米book pro 2022 14/16 汇顶 GT7863 压感触摸板（支持不全）
    
 ### **硬件开源地址：[基于ESP32的Windows精确式触摸板](https://oshwhub.com/barryblueice/esp32-precision-touchpad)**
 
@@ -104,6 +104,7 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
  - 为兼容而设计的HID多端口方案在部分老系统上可能无法使用，例如Windows XP。
  - 不能快速连续单击。
  - 由于处理器限制，原生PTP Mode仅支持有线连接模式/2.4G无线模式。<br>蓝牙模式需要后期更换为ESP32-S3。
+ - 小米book pro 14/16 汇顶 GT7863 压感触摸板需要更多的算法支持和优化。
 
  ***
 

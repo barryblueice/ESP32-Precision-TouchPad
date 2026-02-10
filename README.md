@@ -15,7 +15,7 @@ Also include a HP fingerprint module, in order to support fingerprint for Window
 
 ### **Currently Touchpad Support (already tested):**
  - Lenovo ELAN 33370A TouchPad (Rev.A S8974A, traditional mechanical design)
- - XiaoMi book 14/16 pro Goodix GT7863 TouchPad (Partly support)
+ - XiaoMi book 2022 14/16 pro Goodix GT7863 TouchPad (Partly support)
 
 ### **Hardware OpenSource Link：[ESP32-Precision-TouchPad](https://oshwhub.com/barryblueice/esp32-precision-touchpad)**
 
@@ -104,6 +104,7 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
  - Multi-Port HID compatibility design may not support on some old system, like Windows XP.
  - Cannot perform rapid and consecutive clicks.
  - Due to processor limitation, Original PTP Mode can only support wire connect/2.4G wireless mode. <br>Bluetooth mode needs to use ESP32-S3.
+ - XiaoMi book 2022 14/16 pro Goodix GT7863 TouchPad requires more algorithm support and optimization.
 
 ***
 
