@@ -160,6 +160,11 @@ void goodix_i2c_task(void *arg) {
                         uint16_t rx = f_ptr[1] | (f_ptr[2] << 8);
                         uint16_t ry = f_ptr[3] | (f_ptr[4] << 8);
 
+                        if (rx == 0 || ry == 0) {
+                            tp_current_state.fingers[id].tip_switch = 0;
+                            continue;
+                        }
+
                         static uint16_t last2_raw_x[5] = {0};
                         static uint16_t last2_raw_y[5] = {0};
                         const int MAX_JUMP2 = 500*500;
