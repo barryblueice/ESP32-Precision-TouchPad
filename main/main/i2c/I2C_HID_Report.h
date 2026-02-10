@@ -103,16 +103,16 @@ extern esp_err_t goodix_activate_mouse();
 #if CONFIG_ELAN_LENOVO_33370A
     #define activate_ptp elan_activate_ptp
     #define activate_mouse elan_activate_mouse
-    #define PHYSICAL_X 0x26, 0x5F, 0x0E
-    #define PHYSICAL_Y 0x26, 0xD5, 0x08
+    #define LOGICAL_X 0x26, 0x5F, 0x0E
+    #define LOGICAL_Y 0x26, 0xD5, 0x08
     #define tp_i2c_task elan_i2c_task
     #define i2c_tp_init elan_i2c_init
     #define i2c_tp_int_init elan_tp_interrupt_init
 #elif CONFIG_MI_GOODIX_HAPTIC_ENGINE
     #define activate_ptp goodix_activate_ptp
     #define activate_mouse goodix_activate_mouse
-    #define PHYSICAL_X 0x26, 0xAC, 0x0D
-    #define PHYSICAL_Y 0x26, 0x98, 0x08
+    #define LOGICAL_X  0x26, 0x7F, 0x0D
+    #define LOGICAL_Y  0x26, 0x7F, 0x0D
     #define tp_i2c_task goodix_i2c_task
     #define i2c_tp_init goodix_i2c_init
     #define i2c_tp_int_init goodix_tp_interrupt_init
