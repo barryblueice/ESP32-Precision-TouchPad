@@ -20,11 +20,11 @@ Also include a HP fingerprint module, in order to support fingerprint for Window
 ### **Hardware OpenSource Link：[ESP32-Precision-TouchPad](https://oshwhub.com/barryblueice/esp32-precision-touchpad)**
 
 > [!CAUTION]
-> Hardware & software only support the models of the touchpad mentioned above, untested touchpad models may be incompatible. Use of such models can lead to driver failure or permanent hardware damage caused by short circuits!
+> Hardware & software only support the models of the touchpad mentioned above, untested touchpad models may be incompatible. <br>Use of such models can lead to driver failure or permanent hardware damage caused by short circuits!
 
 > [!IMPORTANT]  
-> The pressure-sensitive touchpad promoted by Xiaomi merely replaced the traditional mechanical structure with a pressure-sensitive motor trigger. It is not a genuine pressure-sensing recognition (there is no pressure-sensing data).
-> Due to the lack of relevant data, the reverse engineering of Goodix is currently underway.
+> The pressure-sensitive touchpad promoted by Xiaomi merely replaced the traditional mechanical structure with a pressure-sensitive motor trigger. It is not a genuine pressure-sensing recognition (there is no pressure-sensing data).<br>
+> Due to the lack of relevant data, the reverse engineering of Goodix is currently underway.<br>
 > The reverse engineering of the HID Descriptor has been completed, as well as the optimization of the translation of touch HID messages and the report has been submitted, but the touch algorithm needs to be optimized.
 
 #### **PTP Mode Demonstration**:
@@ -105,7 +105,7 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
  - Cannot perform rapid and consecutive clicks.
  - Due to processor limitation, Original PTP Mode can only support wire connect/2.4G wireless mode. <br>Bluetooth mode needs to use ESP32-S3.
  - XiaoMi book 2022 14/16 pro Goodix GT7863 TouchPad requires more algorithm support and optimization.
-   The current operation is rather sluggish, not as smooth as the ELAN touchpad.
+   <br>The current operation is rather sluggish, not as smooth as the ELAN touchpad.
 
 ***
 
