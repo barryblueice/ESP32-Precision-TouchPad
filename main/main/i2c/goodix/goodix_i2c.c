@@ -111,7 +111,7 @@ typedef enum {
     TOUCH_DRAG
 } touch_state_t;
 
-static uint16_t get_medium(uint16_t n1, uint16_t n2, uint16_t n3) {
+static uint16_t get_median(uint16_t n1, uint16_t n2, uint16_t n3) {
     if ((n1 > n2) ^ (n1 > n3)) return n1;
     else if ((n2 > n1) ^ (n2 > n3)) return n2;
     else return n3;
@@ -185,8 +185,8 @@ void goodix_i2c_task(void *arg) {
 
                         if (raw_x_history[id][0] == 0) continue;
 
-                        uint16_t mx = get_medium(raw_x_history[id][0], raw_x_history[id][1], raw_x_history[id][2]);
-                        uint16_t my = get_medium(raw_y_history[id][0], raw_y_history[id][1], raw_y_history[id][2]);
+                        uint16_t mx = get_median(raw_x_history[id][0], raw_x_history[id][1], raw_x_history[id][2]);
+                        uint16_t my = get_median(raw_y_history[id][0], raw_y_history[id][1], raw_y_history[id][2]);
 
                         int16_t predict_x = raw_x_history[id][HISTORY_LEN-1];
                         int16_t predict_y = raw_y_history[id][HISTORY_LEN-1];
