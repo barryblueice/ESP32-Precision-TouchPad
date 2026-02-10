@@ -10,7 +10,7 @@ static const char *TAG = "GOODIX_DEBUG";
 
 i2c_master_dev_handle_t dev_handle;
 
-esp_err_t elan_activate_ptp() {
+esp_err_t goodix_activate_ptp() {
     uint8_t payload[] = {
         0x05, 0x00,             // Command Register
         0x33, 0x03,             // SET_REPORT Feature ID 03
@@ -19,6 +19,50 @@ esp_err_t elan_activate_ptp() {
         0x03, 0x03, 0x00        // Value: Enable PTP Mode
     };
     return i2c_master_transmit(dev_handle, payload, sizeof(payload), 200);
+}
+
+uint8_t *report_desc = NULL;
+int report_desc_len = 0;
+
+static void hex_dump(const uint8_t *buf, int len) {
+    for (int i = 0; i < len; i++) {
+        printf("%02X ", buf[i]);
+        if ((i & 0x0F) == 0x0F) printf("\n");
+    }
+    printf("\n");
+}
+
+static bool goodix_read_descriptors() {
+    esp_err_t ret;
+    uint8_t hid_desc[32] = {0};
+    uint8_t req[2] = {0x20, 0x00};
+
+    ret = i2c_master_transmit_receive(
+        dev_handle, req, 2, hid_desc, 30, pdMS_TO_TICKS(200)
+    );
+    if (ret != ESP_OK) return false;
+
+    report_desc_len = hid_desc[4] | (hid_desc[5] << 8);
+    uint16_t report_reg = hid_desc[6] | (hid_desc[7] << 8);
+
+    if (report_desc_len == 0 || report_desc_len > 1024) return false;
+
+    report_desc = malloc(report_desc_len);
+    if (!report_desc) return false;
+
+    uint8_t reg[2] = { report_reg & 0xFF, report_reg >> 8 };
+    ret = i2c_master_transmit_receive(
+        dev_handle, reg, 2, report_desc, report_desc_len, pdMS_TO_TICKS(500)
+    );
+    if (ret != ESP_OK) {
+        free(report_desc);
+        report_desc = NULL;
+        return false;
+    }
+
+    ESP_LOGI(TAG, "Report Descriptor (%d bytes)", report_desc_len);
+    hex_dump(report_desc, report_desc_len);
+    return true;
 }
 
 void app_main(void) {
@@ -47,26 +91,7 @@ void app_main(void) {
     
     ESP_ERROR_CHECK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
 
-    elan_activate_ptp();
+    goodix_activate_ptp();
     
-    ESP_LOGI(TAG, "Attempting to read HID Descriptor...");
-    uint8_t desc_req[] = {0x20, 0x00};
-    uint8_t buffer[32];
-    
-    i2c_master_transmit_receive(dev_handle, desc_req, 2, buffer, 30, 100);
-    
-    ESP_LOGI(TAG, "Descriptor Data: %02x %02x %02x...", buffer[0], buffer[1], buffer[2]);
-
-    while (1) {
-        uint8_t data[32] = {0};
-        if (gpio_get_level(4) == 0) {
-            esp_err_t ret = i2c_master_receive(dev_handle, data, 32, 100);
-            if (ret == ESP_OK) {
-                printf("Raw Data: ");
-                for(int i=0; i<32; i++) printf("%02x ", data[i]);
-                printf("\n");
-            }
-        }
-        vTaskDelay(pdMS_TO_TICKS(1));
-    }
+    goodix_read_descriptors();
 }
