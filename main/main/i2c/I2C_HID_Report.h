@@ -6,13 +6,14 @@
 #include "freertos/queue.h"
 
 typedef struct {
-    struct {
-        uint16_t x;
-        uint16_t y;
-        uint8_t  tip_switch;
-        uint8_t  contact_id;
-        uint8_t tip_switch_prev;
-    } fingers[5];
+    uint16_t x;
+    uint16_t y;
+    uint8_t tip_switch;
+    uint8_t contact_id;
+} tp_finger_t;
+
+typedef struct {
+    tp_finger_t fingers[5];
     uint8_t actual_count;
     uint8_t button_mask;
     uint16_t scan_time;

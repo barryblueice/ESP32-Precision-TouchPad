@@ -111,7 +111,6 @@ typedef enum {
 } touch_state_t;
 
 void elan_i2c_task(void *arg) {
-
     static uint16_t last_raw_x[5] = {0};
     static uint16_t last_raw_y[5] = {0};
     static uint16_t origin_x[5] = {0};
@@ -122,7 +121,11 @@ void elan_i2c_task(void *arg) {
     static uint32_t filtered_x[5] = {0};
     static uint32_t filtered_y[5] = {0};
     static uint8_t finger_life_status = 0;
-    
+
+    static tp_finger_t cached_id0 = {0};
+    static bool has_cached_id0 = false;
+    static bool id0_intercepted = false;
+
     uint8_t data[64];
     const uint16_t JUMP_THRESHOLD = 800;
 
@@ -146,10 +149,7 @@ void elan_i2c_task(void *arg) {
             if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(5)) == ESP_OK) {
                 tp_current_state.button_mask = (data[11] & 0x01) ? 0x01 : 0x00;
 
-                // ESP_LOG_BUFFER_HEX(TAG, data, 12);
-
                 if (data[2] == 0x04) {
-
                     current_mode = PTP_MODE;
 
                     uint8_t status = data[3];
@@ -157,19 +157,16 @@ void elan_i2c_task(void *arg) {
                     finger_life_status = data[3];
 
                     if (id < 5) {
-
                         tp_current_state.scan_time = data[8] | (data[9] << 8);
 
                         bool tip = (status & 0x01);
                         bool confidence = (status & 0x02);
-                        
                         bool is_valid_touch = tip && confidence;
 
                         uint16_t rx = data[4] | (data[5] << 8);
                         uint16_t ry = data[6] | (data[7] << 8);
 
                         if (is_valid_touch && rx > 0 && ry > 0) {
-
                             if (last_raw_x[id] == 0) {
                                 filtered_x[id] = rx << 8;
                                 filtered_y[id] = ry << 8;
@@ -179,17 +176,14 @@ void elan_i2c_task(void *arg) {
                                 int alpha_speed = abs(vx) + abs(vy);
 
                                 uint32_t dynamic_alpha;
-                                if (alpha_speed < 3)
-                                    dynamic_alpha = 64;
-                                else if (alpha_speed < 12)
-                                    dynamic_alpha = 115;
-                                else
-                                    dynamic_alpha = 218;
+                                if (alpha_speed < 3) dynamic_alpha = 64;
+                                else if (alpha_speed < 12) dynamic_alpha = 115;
+                                else dynamic_alpha = 218;
 
                                 filtered_x[id] = (dynamic_alpha * (rx << 8) + 
-                                                    (256 - dynamic_alpha) * filtered_x[id]) >> 8;
+                                                 (256 - dynamic_alpha) * filtered_x[id]) >> 8;
                                 filtered_y[id] = (dynamic_alpha * (ry << 8) + 
-                                                    (256 - dynamic_alpha) * filtered_y[id]) >> 8;
+                                                 (256 - dynamic_alpha) * filtered_y[id]) >> 8;
                             }
 
                             uint16_t fx = (uint16_t)(filtered_x[id] >> 8);
@@ -197,18 +191,13 @@ void elan_i2c_task(void *arg) {
 
                             int dx_raw = rx - last_raw_x[id];
                             int dy_raw = ry - last_raw_y[id];
-
-                            if (abs(dx_raw) > abs(dy_raw) * 2 && abs(dy_raw) < 6) {
-                                ry = last_raw_y[id];
-                            } else if (abs(dy_raw) > abs(dx_raw) * 2 && abs(dx_raw) < 6) {
-                                rx = last_raw_x[id];
-                            }
+                            if (abs(dx_raw) > abs(dy_raw) * 2 && abs(dy_raw) < 6) ry = last_raw_y[id];
+                            else if (abs(dy_raw) > abs(dx_raw) * 2 && abs(dx_raw) < 6) rx = last_raw_x[id];
 
                             int dx = abs((int)rx - (int)origin_x[id]);
                             int dy = abs((int)ry - (int)origin_y[id]);
 
-                            if (touch_state[id] == TOUCH_TAP_CANDIDATE &&
-                                (dx > TAP_DEADZONE || dy > TAP_DEADZONE)) {
+                            if (touch_state[id] == TOUCH_TAP_CANDIDATE && (dx > TAP_DEADZONE || dy > TAP_DEADZONE)) {
                                 touch_state[id] = TOUCH_DRAG;
                                 tap_frozen[id] = false;
                             }
@@ -246,8 +235,7 @@ void elan_i2c_task(void *arg) {
                                 }
                             }
 
-                            if (!tap_frozen[id] &&
-                                last_raw_x[id] != 0 &&
+                            if (!tap_frozen[id] && last_raw_x[id] != 0 &&
                                 abs((int)rx - (int)last_raw_x[id]) > JUMP_THRESHOLD) {
                                 tp_current_state.fingers[id].x = last_raw_x[id];
                                 tp_current_state.fingers[id].y = last_raw_y[id];
@@ -256,10 +244,28 @@ void elan_i2c_task(void *arg) {
                             last_raw_x[id] = rx;
                             last_raw_y[id] = ry;
 
-                            tp_current_state.fingers[id].tip_switch = 1;
-                            tp_current_state.fingers[id].contact_id = id;
+                            if (id == 0) {
+                                cached_id0.x = fx;
+                                cached_id0.y = fy;
+                                cached_id0.tip_switch = 1;
+                                cached_id0.contact_id = 0;
+                                has_cached_id0 = true;
+
+                                tp_current_state.fingers[0].tip_switch = 0;
+                            } else {
+                                tp_current_state.fingers[id].x = fx;
+                                tp_current_state.fingers[id].y = fy;
+                                tp_current_state.fingers[id].tip_switch = 1;
+                                tp_current_state.fingers[id].contact_id = id;
+                            }
+
                             has_data = true;
                         } else {
+                            if (id == 0) {
+                                has_cached_id0 = false;
+                                id0_intercepted = false;
+                            }
+
                             tp_current_state.fingers[id].tip_switch = 0;
                             tp_current_state.fingers[id].x = last_raw_x[id];
                             tp_current_state.fingers[id].y = last_raw_y[id];
@@ -276,19 +282,11 @@ void elan_i2c_task(void *arg) {
                             has_data = true;
                         }
                     }
-                    
                 } else if (data[2] == 0x01) {
-
-                        current_mode = MOUSE_MODE;
-
-                        // ESP_LOG_BUFFER_HEX(TAG, data, sizeof(data));
-
-                        // ESP_LOGI(TAG, "X: %d, y:%d",(int8_t)data[4], (int8_t)data[5]);
-
-                        mouse_current_state.x = (int8_t)data[4];
-                        mouse_current_state.y = (int8_t)data[5];
-
-                        mouse_current_state.buttons = data[3];
+                    current_mode = MOUSE_MODE;
+                    mouse_current_state.x = (int8_t)data[4];
+                    mouse_current_state.y = (int8_t)data[5];
+                    mouse_current_state.buttons = data[3];
                 } else {
                     break;
                 }
@@ -301,39 +299,50 @@ void elan_i2c_task(void *arg) {
                 for (int i = 0; i < 5; i++) {
                     if (tp_current_state.fingers[i].tip_switch) active_count++;
                 }
-                tp_current_state.actual_count = active_count;
+
+                bool is_double_touch = (active_count == 2);
+
+                if (finger_life_status == 0x01 && is_double_touch) {
+                    id0_intercepted = true;
+                    tp_current_state.fingers[0].tip_switch = 0;
+                }
+                else if (finger_life_status == 0x11 && id0_intercepted) {
+                    if (has_cached_id0)
+                        tp_current_state.fingers[0] = cached_id0;
+                    has_cached_id0 = false;
+                    id0_intercepted = false;
+                    memset(&cached_id0, 0, sizeof(tp_finger_t));
+                }
+                else {
+                    if (has_cached_id0 && !id0_intercepted)
+                        tp_current_state.fingers[0] = cached_id0;
+                }
 
                 switch (finger_life_status) {
                     case 0x01:
                         tp_current_state.actual_count = 0;
-                        for (int i = 0; i < 5; i++) {
-                            tp_current_state.fingers[i].tip_switch = 0;
-                        } 
+                        for (int i = 0; i < 5; i++) tp_current_state.fingers[i].tip_switch = 0;
                         break;
                     case 0x11:
-                        // tp_current_state.fingers[1].tip_switch = 0;
-                        for (int i = 1; i < 5; i++) {
-                            tp_current_state.fingers[i].tip_switch = 0;
-                        } 
+                        for (int i = 1; i < 5; i++) tp_current_state.fingers[i].tip_switch = 0;
                         break;
                     case 0x21:
-                        // tp_current_state.fingers[2].tip_switch = 0;
-                        for (int i = 2; i < 5; i++) {
-                            tp_current_state.fingers[i].tip_switch = 0;
-                        } 
+                        for (int i = 2; i < 5; i++) tp_current_state.fingers[i].tip_switch = 0;
                         break;
                     case 0x31:
-                        // tp_current_state.fingers[3].tip_switch = 0;
-                        for (int i = 3; i < 5; i++) {
-                            tp_current_state.fingers[i].tip_switch = 0;
-                        } 
+                        for (int i = 3; i < 5; i++) tp_current_state.fingers[i].tip_switch = 0;
                         break;
                     case 0x41:
                         tp_current_state.fingers[4].tip_switch = 0;
                         break;
-                    default:
-                        break;
+                    default: break;
                 }
+
+                active_count = 0;
+                for (int i = 0; i < 5; i++)
+                    if (tp_current_state.fingers[i].tip_switch)
+                        active_count++;
+                tp_current_state.actual_count = active_count;
 
                 last_report_time = now;
                 xQueueOverwrite(tp_queue, &tp_current_state);
