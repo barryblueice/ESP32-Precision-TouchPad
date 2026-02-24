@@ -1,4 +1,5 @@
 #include "esp_log.h"
+#include "soc/rtc_cntl_reg.h"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -36,6 +37,17 @@ static const char *TAG = "USB_HID_TP";
 #define TPD_REPORT_SIZE_WITHOUT_ID (sizeof(touchpad_report_t) - 1)
 
 const float SENSITIVITY = 3.0f;
+
+#define REPORTID_DFU_CMD  0xFF
+
+void enter_dfu_mode(void)
+{
+
+    ESP_LOGW(TAG, "Preparing to enter ROM DFU mode...");
+    REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    esp_restart();
+}
 
 // USB Device Descriptor
 tusb_desc_device_t const desc_device = {
@@ -95,6 +107,10 @@ void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_
         if (bufsize >= 1) {
             ptp_input_mode = buffer[0];
         }
+    }
+
+    if (report_id == REPORTID_DFU_CMD) {
+        enter_dfu_mode();
     }
 }
 
