@@ -43,6 +43,7 @@ class MainWindow(QMainWindow):
 
     def on_button_clicked(self):
         self.statusBar().showMessage("Sending DFU command...", 2000)
+        self.usb_thread.send_packet()
 
     def closeEvent(self, event):
         self.usb_thread.stop()

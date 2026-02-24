@@ -16,11 +16,16 @@ class USBCommunicatorThread(QThread):
     device_event = Signal(bool)
     status_message = Signal(str)
 
+
     def __init__(self):
         super().__init__()
         self.running = True
         self.device_present = False
         self.dev = hid.device()
+    
+    def send_packet(self):
+        packet = bytes(0xFF for _ in range(REPORT_SIZE))
+        self.dev.write(packet)
 
     def run(self):
         self.status_message.emit("USB Monitor started...")
