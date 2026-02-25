@@ -124,7 +124,17 @@ void elan_i2c_task(void *arg) {
 
     static tp_finger_t cached_id0 = {0};
     static bool has_cached_id0 = false;
-    static bool id0_intercepted = false;
+
+    typedef enum {
+        GATE_IDLE = 0,
+        GATE_WAIT_SECOND,
+        GATE_DUAL_ACTIVE
+    } id0_gate_state_t;
+
+    static id0_gate_state_t gate_state = GATE_IDLE;
+    static int64_t gate_start_time = 0;
+
+    #define DUAL_WAIT_TIMEOUT_MS 8
 
     uint8_t data[64];
     const uint16_t JUMP_THRESHOLD = 800;
@@ -263,7 +273,7 @@ void elan_i2c_task(void *arg) {
                         } else {
                             if (id == 0) {
                                 has_cached_id0 = false;
-                                id0_intercepted = false;
+                                gate_state = GATE_IDLE;
                             }
 
                             tp_current_state.fingers[id].tip_switch = 0;
@@ -300,22 +310,52 @@ void elan_i2c_task(void *arg) {
                     if (tp_current_state.fingers[i].tip_switch) active_count++;
                 }
 
-                bool is_double_touch = (active_count == 2);
+                switch (gate_state) {
+                    case GATE_IDLE:
 
-                if (finger_life_status == 0x01 && is_double_touch) {
-                    id0_intercepted = true;
-                    tp_current_state.fingers[0].tip_switch = 0;
-                }
-                else if (finger_life_status == 0x11 && id0_intercepted) {
-                    if (has_cached_id0)
-                        tp_current_state.fingers[0] = cached_id0;
-                    has_cached_id0 = false;
-                    id0_intercepted = false;
-                    memset(&cached_id0, 0, sizeof(tp_finger_t));
-                }
-                else {
-                    if (has_cached_id0 && !id0_intercepted)
-                        tp_current_state.fingers[0] = cached_id0;
+                        if (finger_life_status == 0x01 && has_cached_id0) {
+                            gate_state = GATE_WAIT_SECOND;
+                            gate_start_time = now;
+
+                            tp_current_state.fingers[0].tip_switch = 0;
+                            active_count = 0;
+                        } else if (has_cached_id0) {
+                            tp_current_state.fingers[0] = cached_id0;
+                        }
+                        break;
+
+
+                    case GATE_WAIT_SECOND:
+
+                        if (finger_life_status == 0x11) {
+                            tp_current_state.fingers[0] = cached_id0;
+                            gate_state = GATE_DUAL_ACTIVE;
+                        }
+                        else if ((now - gate_start_time) > DUAL_WAIT_TIMEOUT_MS) {
+                            tp_current_state.fingers[0] = cached_id0;
+                            gate_state = GATE_IDLE;
+                        }
+                        else {
+                            tp_current_state.fingers[0].tip_switch = 0;
+                        }
+
+                        break;
+
+
+                    case GATE_DUAL_ACTIVE:
+
+                        if (active_count <= 1) {
+
+                            gate_state = GATE_IDLE;
+                            has_cached_id0 = false;
+                            memset(&cached_id0, 0, sizeof(tp_finger_t));
+
+                        }
+                        else if (has_cached_id0) {
+                            tp_current_state.fingers[0] = cached_id0;
+                        }
+
+                        break;
                 }
 
                 switch (finger_life_status) {
