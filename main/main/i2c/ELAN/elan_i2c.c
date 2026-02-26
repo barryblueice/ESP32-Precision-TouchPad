@@ -364,6 +364,9 @@ void elan_i2c_task(void *arg) {
 
                 if (finger_life_status == 0x11) {
                     global_watchdog_start = true;
+                    if (tp_current_state.actual_count == 0) {
+                        tp_current_state.actual_count = 1;
+                    }
                 } else {
                     global_watchdog_start = false;
                 }
