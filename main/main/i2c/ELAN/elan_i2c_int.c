@@ -15,18 +15,31 @@ extern i2c_master_dev_handle_t dev_handle;
 extern TaskHandle_t tp_read_task_handle;
 
 static void IRAM_ATTR tp_gpio_isr_handler(void* arg) {
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    if (tp_read_task_handle != NULL) {
-        vTaskNotifyGiveFromISR(tp_read_task_handle, &xHigherPriorityTaskWoken);
-    }
-    if (xHigherPriorityTaskWoken) {
-        portYIELD_FROM_ISR();
+    uint8_t level = gpio_get_level(GPIO_NUM_7);
+    if (level == 0) {
+        esp_timer_stop(timeout_watchdog_timer);
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        if (tp_read_task_handle != NULL) {
+            vTaskNotifyGiveFromISR(tp_read_task_handle, &xHigherPriorityTaskWoken);
+        }
+        if (xHigherPriorityTaskWoken) {
+            portYIELD_FROM_ISR();
+        }
+    } else {
+        esp_timer_start_once(timeout_watchdog_timer, WATCHDOG_TIMEOUT_US);
     }
 }
 
 void elan_tp_interrupt_init(void) {
+
+    const esp_timer_create_args_t timer_args = {
+        .callback = &watchdog_timeout_callback,
+        .name = "touch_timeout_timer"
+    };
+    esp_timer_create(&timer_args, &timeout_watchdog_timer);
+
     gpio_config_t io_conf = {
-        .intr_type = GPIO_INTR_NEGEDGE,
+        .intr_type = GPIO_INTR_ANYEDGE,
         .mode = GPIO_MODE_INPUT,
         .pin_bit_mask = (1ULL << GPIO_NUM_7),
         .pull_up_en = GPIO_PULLUP_DISABLE,

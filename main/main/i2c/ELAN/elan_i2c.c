@@ -110,6 +110,9 @@ typedef enum {
     TOUCH_DRAG
 } touch_state_t;
 
+uint16_t global_scan_time = 0;
+bool global_watchdog_start = false;
+
 void elan_i2c_task(void *arg) {
     static uint16_t last_raw_x[5] = {0};
     static uint16_t last_raw_y[5] = {0};
@@ -168,6 +171,7 @@ void elan_i2c_task(void *arg) {
 
                     if (id < 5) {
                         tp_current_state.scan_time = data[8] | (data[9] << 8);
+                        global_scan_time = tp_current_state.scan_time;
 
                         bool tip = (status & 0x01);
                         bool confidence = (status & 0x02);
@@ -358,24 +362,10 @@ void elan_i2c_task(void *arg) {
                         break;
                 }
 
-                switch (finger_life_status) {
-                    case 0x01:
-                        tp_current_state.actual_count = 0;
-                        for (int i = 0; i < 5; i++) tp_current_state.fingers[i].tip_switch = 0;
-                        break;
-                    case 0x11:
-                        for (int i = 1; i < 5; i++) tp_current_state.fingers[i].tip_switch = 0;
-                        break;
-                    case 0x21:
-                        for (int i = 2; i < 5; i++) tp_current_state.fingers[i].tip_switch = 0;
-                        break;
-                    case 0x31:
-                        for (int i = 3; i < 5; i++) tp_current_state.fingers[i].tip_switch = 0;
-                        break;
-                    case 0x41:
-                        tp_current_state.fingers[4].tip_switch = 0;
-                        break;
-                    default: break;
+                if (finger_life_status == 0x11) {
+                    global_watchdog_start = true;
+                } else {
+                    global_watchdog_start = false;
                 }
 
                 active_count = 0;
