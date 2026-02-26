@@ -78,7 +78,18 @@ char const* string_desc[] = {
 
 // TinyUSB callbacks
 uint8_t const *tud_hid_descriptor_report_cb(uint8_t instance) {
-    return (instance == 0) ? ptp_hid_report_descriptor : mouse_hid_report_descriptor;
+    // return (instance == 0) ? ptp_hid_report_descriptor : mouse_hid_report_descriptor;
+    switch (instance) {
+    case 0:
+        return generic_hid_report_descriptor;
+    case 1:
+        return ptp_hid_report_descriptor;
+    case 2:
+        return mouse_hid_report_descriptor;
+    default:
+        return NULL;
+    }
+    return NULL;
 }
 
 uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t *buffer, uint16_t reqlen) {
@@ -103,13 +114,16 @@ static uint8_t ptp_input_mode = 0x00;
 
 void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t const *buffer, uint16_t bufsize) {
     (void)instance;
+
+    uint8_t command = buffer[0];
+
     if (report_type == HID_REPORT_TYPE_FEATURE && report_id == REPORTID_FEATURE) {
         if (bufsize >= 1) {
             ptp_input_mode = buffer[0];
         }
     }
 
-    if (report_id == REPORTID_DFU_CMD) {
+    if (command == REPORTID_DFU_CMD) {
         enter_dfu_mode();
     }
 }
@@ -192,8 +206,8 @@ void usbhid_task(void *arg) {
                 // ESP_LOGI(TAG, "X: %d, y:%d", report.x, report.y);
 
                 if (wireless_mode == 1) {
-                    if (tud_hid_n_ready(1)) {
-                        tud_hid_n_report(1, REPORTID_MOUSE, &report, sizeof(report));
+                    if (tud_hid_n_ready(2)) {
+                        tud_hid_n_report(2, REPORTID_MOUSE, &report, sizeof(report));
                     } 
                 } else {
                     pkt.type = MOUSE_MODE;
@@ -242,8 +256,8 @@ void usbhid_task(void *arg) {
                 // ESP_DRAM_LOGI(TAG, "X: %d, Y:%d", report.fingers[0].x, report.fingers[0].y);
 
                 if (wireless_mode == 1) {
-                    if (tud_hid_n_ready(0)) {
-                        tud_hid_n_report(0, REPORTID_TOUCHPAD, &report, sizeof(report));
+                    if (tud_hid_n_ready(1)) {
+                        tud_hid_n_report(1, REPORTID_TOUCHPAD, &report, sizeof(report));
                     }
                 } else {
                     pkt.type = PTP_MODE;

@@ -15,10 +15,15 @@
 #define REPORTID_FEATURE          0x05  // Input Mode
 #define REPORTID_FUNCTION_SWITCH  0x06
 
-#define EPNUM_TP_IN    0x81
-#define EPNUM_MOUSE_IN 0x82
+#define EPNUM_GENERIC_IN 0x81
+#define EPNUM_TP_IN    0x82
+#define EPNUM_MOUSE_IN 0x83
 
-#define CONFIG_TOTAL_LEN  (TUD_CONFIG_DESC_LEN + 2 * TUD_HID_DESC_LEN)
+#define CONFIG_TOTAL_LEN  (TUD_CONFIG_DESC_LEN + 3 * TUD_HID_DESC_LEN)
+
+const uint8_t generic_hid_report_descriptor[] = {
+    TUD_HID_REPORT_DESC_GENERIC_INOUT(64)
+};
 
 const uint8_t mouse_hid_report_descriptor[] = {
 
@@ -336,7 +341,8 @@ const uint8_t ptp_hid_report_descriptor[] = {
 // };
 
 uint8_t const desc_configuration[] = {
-    TUD_CONFIG_DESCRIPTOR(1, 2, 0, CONFIG_TOTAL_LEN, 0x00, 100),
-    TUD_HID_DESCRIPTOR(0, 0, HID_ITF_PROTOCOL_NONE, sizeof(ptp_hid_report_descriptor), EPNUM_TP_IN, 64, 10),
-    TUD_HID_DESCRIPTOR(1, 0, HID_ITF_PROTOCOL_MOUSE, sizeof(mouse_hid_report_descriptor), EPNUM_MOUSE_IN, 8, 10)
+    TUD_CONFIG_DESCRIPTOR(1, 3, 0, CONFIG_TOTAL_LEN, 0x00, 100),
+    TUD_HID_DESCRIPTOR(0, 0, false, sizeof(generic_hid_report_descriptor), EPNUM_GENERIC_IN, 64, 10),
+    TUD_HID_DESCRIPTOR(1, 0, HID_ITF_PROTOCOL_NONE, sizeof(ptp_hid_report_descriptor), EPNUM_TP_IN, 64, 10),
+    TUD_HID_DESCRIPTOR(2, 0, HID_ITF_PROTOCOL_MOUSE, sizeof(mouse_hid_report_descriptor), EPNUM_MOUSE_IN, 8, 10)
 };

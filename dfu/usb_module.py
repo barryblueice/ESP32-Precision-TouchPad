@@ -16,46 +16,47 @@ class USBCommunicatorThread(QThread):
     device_event = Signal(bool)
     status_message = Signal(str)
 
-
     def __init__(self):
         super().__init__()
         self.running = True
         self.device_present = False
         self.dev = hid.device()
-    
+        self.target_interface = 0 
+
     def send_packet(self):
-        packet = bytes(0xFF for _ in range(REPORT_SIZE))
-        self.dev.write(packet)
+        packet = [0xFF] + [0xFF] * (REPORT_SIZE)
+        if self.device_present:
+            try:
+                self.dev.write(packet)
+            except Exception as e:
+                self.status_message.emit(f"Write error: {e}")
 
     def run(self):
         self.status_message.emit("USB Monitor started...")
         while self.running:
             try:
-                dev_found = usb.core.find(idVendor=VID, idProduct=PID, backend=backend)
-                
-                is_hid = False
-                if dev_found:
-                    for cfg in dev_found:
-                        for intf in cfg:
-                            if intf.bInterfaceClass == 0x03:
-                                is_hid = True
-                                break
-                
-                if is_hid and not self.device_present:
+                device_info = None
+                for d in hid.enumerate(VID, PID):
+                    if d['interface_number'] == self.target_interface:
+                        device_info = d
+                        break
+
+                if device_info and not self.device_present:
                     try:
-                        self.dev.open(VID, PID)
+                        self.dev.open_path(device_info['path'])
+                        self.dev.set_nonblocking(True)
                         self.device_present = True
                         self.device_event.emit(True)
                         self.status_message.emit(f"Device connected: (VID:{hex(VID)} PID:{hex(PID)})")
                     except Exception as e:
                         self.status_message.emit(f"Open Failed: {str(e)}")
 
-                elif not is_hid and self.device_present:
+                elif not device_info and self.device_present:
                     self.device_present = False
                     self.dev.close()
                     self.device_event.emit(False)
                     self.status_message.emit("Device disconnected")
-                    
+
             except Exception as e:
                 pass
 
@@ -63,5 +64,6 @@ class USBCommunicatorThread(QThread):
 
     def stop(self):
         self.running = False
-        self.dev.close()
+        if self.device_present:
+            self.dev.close()
         self.wait()

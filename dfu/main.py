@@ -42,7 +42,7 @@ class MainWindow(QMainWindow):
             self.btn_action.setText("Waiting for connect...")
 
     def on_button_clicked(self):
-        self.statusBar().showMessage("Sending DFU command...", 2000)
+        self.statusBar().showMessage("Sending DFU command...")
         self.usb_thread.send_packet()
 
     def closeEvent(self, event):
