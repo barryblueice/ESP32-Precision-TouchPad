@@ -28,7 +28,7 @@ void watchdog_timeout_callback(void* arg) {
 
         if (tp_queue != NULL) {
             xQueueOverwrite(tp_queue, &release_msg);
-            ESP_DRAM_LOGW(TAG, "Watchdog triggered: Force simulating finger release for ID 0");
+            // ESP_DRAM_LOGW(TAG, "Watchdog triggered: Force simulating finger release for ID 0");
         }
     }
 
