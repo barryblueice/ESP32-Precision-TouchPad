@@ -12,6 +12,7 @@ if(CONFIG_ELAN_LENOVO_33370A)
     list(APPEND srcs 
         "i2c/ELAN/elan_i2c.c"
         "i2c/ELAN/elan_i2c_int.c"
+        "i2c/ELAN/elan_watchdog.c"
     )
 endif()
 

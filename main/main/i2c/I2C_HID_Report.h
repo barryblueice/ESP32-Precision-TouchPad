@@ -5,6 +5,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 
+extern uint16_t global_scan_time;
+
 typedef struct {
     uint16_t x;
     uint16_t y;
