@@ -5,7 +5,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 
-void elan_i2c_task(void *arg);
+// void elan_i2c_task(void *arg);
+void elan_processing_task(void *arg);
+void elan_capture_task(void *arg);
 void elan_tp_interrupt_init(void);
 void elan_i2c_init(void);
 

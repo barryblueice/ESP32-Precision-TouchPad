@@ -6,10 +6,13 @@
 #include "tinyusb.h"
 #include "nvs/ptp_nvs.h"
 #include "wireless/wireless.h"
+#include "i2c/ELAN/elan_i2c.h"
 
 #include "sdkconfig.h"
 
 #include "i2c/I2C_HID_Report.h"
+
+QueueHandle_t tp_raw_pool = NULL;
 
 void app_main(void) {
 
@@ -20,6 +23,7 @@ void app_main(void) {
     
     current_mode = MOUSE_MODE;
     
+    tp_raw_pool = xQueueCreate(20, sizeof(tp_raw_packet_t));
     tp_queue = xQueueCreate(1, sizeof(tp_multi_msg_t));
     mouse_queue = xQueueCreate(1, sizeof(mouse_msg_t));
 
@@ -33,7 +37,10 @@ void app_main(void) {
 
     usbhid_init();
 
-    xTaskCreate(tp_i2c_task, "i2c_task", 4096, NULL, 10, NULL);
+    // xTaskCreate(tp_i2c_task, "i2c_task", 4096, NULL, 10, NULL);
+
+    xTaskCreate(elan_capture_task, "i2c_task", 4096, NULL, 10, NULL);
+    xTaskCreate(elan_processing_task, "i2c_processing_task", 4096, NULL, 10, NULL);
 
     xTaskCreate(usbhid_task, "hid", 4096, NULL, 12, NULL);
 

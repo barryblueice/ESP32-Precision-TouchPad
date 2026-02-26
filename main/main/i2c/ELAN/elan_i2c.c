@@ -110,285 +110,146 @@ typedef enum {
     TOUCH_DRAG
 } touch_state_t;
 
-void elan_i2c_task(void *arg) {
-    static uint16_t last_raw_x[5] = {0};
-    static uint16_t last_raw_y[5] = {0};
-    static uint16_t origin_x[5] = {0};
-    static uint16_t origin_y[5] = {0};
-    static int64_t last_report_time = 0;
-    static bool tap_frozen[5] = {false};
-    static touch_state_t touch_state[5] = {0};
-    static uint32_t filtered_x[5] = {0};
-    static uint32_t filtered_y[5] = {0};
-    static uint8_t finger_life_status = 0;
+void elan_capture_task(void *arg) {
+    tp_raw_packet_t packet;
+    while (1) {
+        // 优先检查硬件中断引脚
+        if (gpio_get_level(INT_IO) == 0) {
+            if (i2c_master_receive(dev_handle, packet.raw_data, 64, pdMS_TO_TICKS(5)) == ESP_OK) {
+                packet.timestamp = esp_timer_get_time() / 1000;
+                xQueueSend(tp_raw_pool, &packet, 0);
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(1)); 
+    }
+}
+
+typedef enum { 
+    GATE_IDLE = 0, 
+    GATE_WAIT_SECOND, 
+    GATE_DUAL_ACTIVE } 
+    id0_gate_state_t;
+
+void finalize_and_send_frame(tp_multi_msg_t *frame, id0_gate_state_t *state, int64_t *start_time, bool *has_id0, tp_finger_t *cache0, int64_t now) {
+    uint8_t active_count = 0;
+    for (int i = 0; i < 5; i++) {
+        if (frame->fingers[i].tip_switch) active_count++;
+    }
+
+    static uint8_t last_frame_active_count = 0;
+
+    if (active_count == 0 && last_frame_active_count == 0 && frame->button_mask == 0) {
+        return;
+    }
+
+    switch (*state) {
+        case GATE_IDLE:
+            if (active_count == 1 && frame->fingers[0].tip_switch && *has_id0) {
+                *state = GATE_WAIT_SECOND;
+                *start_time = now;
+                frame->fingers[0].tip_switch = 0;
+            } else if (*has_id0) {
+                frame->fingers[0] = *cache0;
+            }
+            break;
+
+        case GATE_WAIT_SECOND:
+            if (active_count >= 2) {
+                frame->fingers[0] = *cache0;
+                *state = GATE_DUAL_ACTIVE;
+            } else if ((now - *start_time) > 8) {
+                frame->fingers[0] = *cache0;
+                *state = GATE_IDLE;
+            } else {
+                frame->fingers[0].tip_switch = 0;
+            }
+            break;
+
+        case GATE_DUAL_ACTIVE:
+            if (active_count <= 1) {
+                *state = GATE_IDLE;
+                *has_id0 = false;
+            } else {
+                frame->fingers[0] = *cache0;
+            }
+            break;
+    }
+
+    uint8_t final_count = 0;
+    for (int i = 0; i < 5; i++) {
+        if (frame->fingers[i].tip_switch) final_count++;
+    }
+    frame->actual_count = final_count;
+
+    xQueueOverwrite(tp_queue, frame);
+
+    last_frame_active_count = active_count;
+}
+
+void elan_processing_task(void *arg) {
+    static uint16_t last_raw_x[5] = {0}, last_raw_y[5] = {0};
+    static uint32_t filtered_x[5] = {0}, filtered_y[5] = {0};
+    
+    static tp_multi_msg_t shadow_frame = {0};
+    static uint8_t received_mask = 0;
 
     static tp_finger_t cached_id0 = {0};
     static bool has_cached_id0 = false;
-
-    typedef enum {
-        GATE_IDLE = 0,
-        GATE_WAIT_SECOND,
-        GATE_DUAL_ACTIVE
-    } id0_gate_state_t;
-
     static id0_gate_state_t gate_state = GATE_IDLE;
     static int64_t gate_start_time = 0;
 
-    #define DUAL_WAIT_TIMEOUT_MS 8
-
-    uint8_t data[64];
-    const uint16_t JUMP_THRESHOLD = 800;
+    tp_raw_packet_t packet;
 
     while (1) {
-        ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1)); 
+        if (xQueueReceive(tp_raw_pool, &packet, portMAX_DELAY)) {
+            uint8_t *data = packet.raw_data;
+            int64_t now = packet.timestamp;
 
-        tp_multi_msg_t tp_current_state = {0}; 
-        mouse_msg_t mouse_current_state = {0};
-        bool has_data = false;
-        int64_t now = esp_timer_get_time() / 1000;
+            if (data[2] == 0x04) {
+                uint8_t status = data[3];
+                uint8_t id = (status & 0xF0) >> 4;
+                if (id >= 5) continue;
 
-        if (now - last_report_time > STALE_MS) {
-            for (int i = 0; i < 5; i++) { 
-                last_raw_x[i] = 0; last_raw_y[i] = 0; 
-                origin_x[i] = 0; origin_y[i] = 0;
-            }
-        }
+                if (received_mask & (1 << id)) {
+                    finalize_and_send_frame(&shadow_frame, &gate_state, &gate_start_time, &has_cached_id0, &cached_id0, now);
+                    memset(&shadow_frame, 0, sizeof(tp_multi_msg_t));
+                    received_mask = 0;
+                }
 
-        int safety = 10;
-        while (gpio_get_level(INT_IO) == 0 && safety-- > 0) {
-            if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(5)) == ESP_OK) {
-                tp_current_state.button_mask = (data[11] & 0x01) ? 0x01 : 0x00;
+                bool tip = (status & 0x01);
+                bool confidence = (status & 0x02);
+                uint16_t rx = data[4] | (data[5] << 8);
+                uint16_t ry = data[6] | (data[7] << 8);
 
-                if (data[2] == 0x04) {
-                    current_mode = PTP_MODE;
-
-                    uint8_t status = data[3];
-                    uint8_t id = (status & 0xF0) >> 4;
-                    finger_life_status = data[3];
-
-                    if (id < 5) {
-                        tp_current_state.scan_time = data[8] | (data[9] << 8);
-
-                        bool tip = (status & 0x01);
-                        bool confidence = (status & 0x02);
-                        bool is_valid_touch = tip && confidence;
-
-                        uint16_t rx = data[4] | (data[5] << 8);
-                        uint16_t ry = data[6] | (data[7] << 8);
-
-                        if (is_valid_touch && rx > 0 && ry > 0) {
-                            if (last_raw_x[id] == 0) {
-                                filtered_x[id] = rx << 8;
-                                filtered_y[id] = ry << 8;
-                            } else {
-                                int vx = rx - last_raw_x[id];
-                                int vy = ry - last_raw_y[id];
-                                int alpha_speed = abs(vx) + abs(vy);
-
-                                uint32_t dynamic_alpha;
-                                if (alpha_speed < 3) dynamic_alpha = 64;
-                                else if (alpha_speed < 12) dynamic_alpha = 115;
-                                else dynamic_alpha = 218;
-
-                                filtered_x[id] = (dynamic_alpha * (rx << 8) + 
-                                                 (256 - dynamic_alpha) * filtered_x[id]) >> 8;
-                                filtered_y[id] = (dynamic_alpha * (ry << 8) + 
-                                                 (256 - dynamic_alpha) * filtered_y[id]) >> 8;
-                            }
-
-                            uint16_t fx = (uint16_t)(filtered_x[id] >> 8);
-                            uint16_t fy = (uint16_t)(filtered_y[id] >> 8);
-
-                            int dx_raw = rx - last_raw_x[id];
-                            int dy_raw = ry - last_raw_y[id];
-                            if (abs(dx_raw) > abs(dy_raw) * 2 && abs(dy_raw) < 6) ry = last_raw_y[id];
-                            else if (abs(dy_raw) > abs(dx_raw) * 2 && abs(dx_raw) < 6) rx = last_raw_x[id];
-
-                            int dx = abs((int)rx - (int)origin_x[id]);
-                            int dy = abs((int)ry - (int)origin_y[id]);
-
-                            if (touch_state[id] == TOUCH_TAP_CANDIDATE && (dx > TAP_DEADZONE || dy > TAP_DEADZONE)) {
-                                touch_state[id] = TOUCH_DRAG;
-                                tap_frozen[id] = false;
-                            }
-
-                            if (touch_state[id] == TOUCH_TAP_CANDIDATE) {
-                                if (!tap_frozen[id]) {
-                                    tap_frozen[id] = true;
-                                    filtered_x[id] = origin_x[id];
-                                    filtered_y[id] = origin_y[id];
-                                }
-                                tp_current_state.fingers[id].x = origin_x[id];
-                                tp_current_state.fingers[id].y = origin_y[id];
-                            } else {
-                                tap_frozen[id] = false;
-                                tp_current_state.fingers[id].x = fx;
-                                tp_current_state.fingers[id].y = fy;
-                            }
-
-                            int sum_x = 0, sum_y = 0, count = 0;
-                            for (int i = 0; i < 5; i++) {
-                                if (tap_frozen[i]) {
-                                    sum_x += origin_x[i];
-                                    sum_y += origin_y[i];
-                                    count++;
-                                }
-                            }
-                            if (count > 1) {
-                                int avg_x = sum_x / count;
-                                int avg_y = sum_y / count;
-                                for (int i = 0; i < 5; i++) {
-                                    if (tap_frozen[i]) {
-                                        origin_x[i] = avg_x;
-                                        origin_y[i] = avg_y;
-                                    }
-                                }
-                            }
-
-                            if (!tap_frozen[id] && last_raw_x[id] != 0 &&
-                                abs((int)rx - (int)last_raw_x[id]) > JUMP_THRESHOLD) {
-                                tp_current_state.fingers[id].x = last_raw_x[id];
-                                tp_current_state.fingers[id].y = last_raw_y[id];
-                            }
-
-                            last_raw_x[id] = rx;
-                            last_raw_y[id] = ry;
-
-                            if (id == 0) {
-                                cached_id0.x = fx;
-                                cached_id0.y = fy;
-                                cached_id0.tip_switch = 1;
-                                cached_id0.contact_id = 0;
-                                has_cached_id0 = true;
-
-                                tp_current_state.fingers[0].tip_switch = 0;
-                            } else {
-                                tp_current_state.fingers[id].x = fx;
-                                tp_current_state.fingers[id].y = fy;
-                                tp_current_state.fingers[id].tip_switch = 1;
-                                tp_current_state.fingers[id].contact_id = id;
-                            }
-
-                            has_data = true;
-                        } else {
-                            if (id == 0) {
-                                has_cached_id0 = false;
-                                gate_state = GATE_IDLE;
-                            }
-
-                            tp_current_state.fingers[id].tip_switch = 0;
-                            tp_current_state.fingers[id].x = last_raw_x[id];
-                            tp_current_state.fingers[id].y = last_raw_y[id];
-
-                            last_raw_x[id] = 0;
-                            last_raw_y[id] = 0;
-                            origin_x[id] = 0;
-                            origin_y[id] = 0;
-                            filtered_x[id] = 0;
-                            filtered_y[id] = 0;
-                            tap_frozen[id] = false;
-                            touch_state[id] = TOUCH_IDLE;
-
-                            has_data = true;
-                        }
+                if (tip && confidence && rx > 0 && ry > 0) {
+                    if (last_raw_x[id] == 0) {
+                        filtered_x[id] = rx << 8; filtered_y[id] = ry << 8;
+                    } else {
+                        int vx = rx - last_raw_x[id], vy = ry - last_raw_y[id];
+                        uint32_t alpha = (abs(vx) + abs(vy) < 3) ? 64 : (abs(vx) + abs(vy) < 12 ? 115 : 218);
+                        filtered_x[id] = (alpha * (rx << 8) + (256 - alpha) * filtered_x[id]) >> 8;
+                        filtered_y[id] = (alpha * (ry << 8) + (256 - alpha) * filtered_y[id]) >> 8;
                     }
-                } else if (data[2] == 0x01) {
-                    current_mode = MOUSE_MODE;
-                    mouse_current_state.x = (int8_t)data[4];
-                    mouse_current_state.y = (int8_t)data[5];
-                    mouse_current_state.buttons = data[3];
+
+                    shadow_frame.fingers[id].x = (uint16_t)(filtered_x[id] >> 8);
+                    shadow_frame.fingers[id].y = (uint16_t)(filtered_y[id] >> 8);
+                    shadow_frame.fingers[id].tip_switch = 1;
+                    shadow_frame.fingers[id].contact_id = id;
+
+                    if (id == 0) {
+                        cached_id0 = shadow_frame.fingers[0];
+                        has_cached_id0 = true;
+                    }
+                    last_raw_x[id] = rx; last_raw_y[id] = ry;
                 } else {
-                    break;
+                    shadow_frame.fingers[id].tip_switch = 0;
+                    last_raw_x[id] = 0;
+                    if (id == 0) has_cached_id0 = false;
                 }
+
+                shadow_frame.button_mask = (data[11] & 0x01);
+                received_mask |= (1 << id);
             }
-        }
-
-        if (current_mode == PTP_MODE) {
-            if (has_data || tp_current_state.button_mask) {
-                uint8_t active_count = 0;
-                for (int i = 0; i < 5; i++) {
-                    if (tp_current_state.fingers[i].tip_switch) active_count++;
-                }
-
-                switch (gate_state) {
-                    case GATE_IDLE:
-
-                        if (finger_life_status == 0x01 && has_cached_id0) {
-                            gate_state = GATE_WAIT_SECOND;
-                            gate_start_time = now;
-
-                            tp_current_state.fingers[0].tip_switch = 0;
-                            active_count = 0;
-                        } else if (has_cached_id0) {
-                            tp_current_state.fingers[0] = cached_id0;
-                        }
-                        break;
-
-
-                    case GATE_WAIT_SECOND:
-
-                        if (finger_life_status == 0x11) {
-                            tp_current_state.fingers[0] = cached_id0;
-                            gate_state = GATE_DUAL_ACTIVE;
-                        }
-                        else if ((now - gate_start_time) > DUAL_WAIT_TIMEOUT_MS) {
-                            tp_current_state.fingers[0] = cached_id0;
-                            gate_state = GATE_IDLE;
-                        }
-                        else {
-                            tp_current_state.fingers[0].tip_switch = 0;
-                        }
-
-                        break;
-
-
-                    case GATE_DUAL_ACTIVE:
-
-                        if (active_count <= 1) {
-
-                            gate_state = GATE_IDLE;
-                            has_cached_id0 = false;
-                            memset(&cached_id0, 0, sizeof(tp_finger_t));
-
-                        }
-                        else if (has_cached_id0) {
-                            tp_current_state.fingers[0] = cached_id0;
-                        }
-
-                        break;
-                }
-
-                switch (finger_life_status) {
-                    case 0x01:
-                        tp_current_state.actual_count = 0;
-                        for (int i = 0; i < 5; i++) tp_current_state.fingers[i].tip_switch = 0;
-                        break;
-                    case 0x11:
-                        for (int i = 1; i < 5; i++) tp_current_state.fingers[i].tip_switch = 0;
-                        break;
-                    case 0x21:
-                        for (int i = 2; i < 5; i++) tp_current_state.fingers[i].tip_switch = 0;
-                        break;
-                    case 0x31:
-                        for (int i = 3; i < 5; i++) tp_current_state.fingers[i].tip_switch = 0;
-                        break;
-                    case 0x41:
-                        tp_current_state.fingers[4].tip_switch = 0;
-                        break;
-                    default: break;
-                }
-
-                active_count = 0;
-                for (int i = 0; i < 5; i++)
-                    if (tp_current_state.fingers[i].tip_switch)
-                        active_count++;
-                tp_current_state.actual_count = active_count;
-
-                last_report_time = now;
-                xQueueOverwrite(tp_queue, &tp_current_state);
-            }
-        } else if (current_mode == MOUSE_MODE) {
-            xQueueOverwrite(mouse_queue, &mouse_current_state);
         }
     }
 }

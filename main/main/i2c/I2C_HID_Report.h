@@ -55,6 +55,13 @@ typedef enum {
     ALIVE_MODE = 3
 } input_mode_t;
 
+typedef struct {
+    uint8_t raw_data[64];
+    int64_t timestamp;
+} tp_raw_packet_t;
+
+extern QueueHandle_t tp_raw_pool;
+
 typedef struct __attribute__((packed)) {
     uint8_t tip_conf_id;  // Bit0:Conf, Bit1:Tip, Bit2-7:ID
     uint16_t x;           
