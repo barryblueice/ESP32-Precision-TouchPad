@@ -224,24 +224,36 @@ void goodix_i2c_task(void *arg) {
                             filtered_x[id] = mx << 8; filtered_y[id] = my << 8;
                             origin_x[id] = mx; origin_y[id] = my;
                         } else {
-                            int vx = mx - last_raw_x[id];
-                            int vy = my - last_raw_y[id];
-                            int speed = abs(vx) + abs(vy);
-                            uint32_t alpha = (speed < 3) ? 64 : (speed < 12 ? 115 : 218);
-                            filtered_x[id] = (alpha * (mx << 8) + (256 - alpha) * filtered_x[id]) >> 8;
-                            filtered_y[id] = (alpha * (my << 8) + (256 - alpha) * filtered_y[id]) >> 8;
+                            int vx = rx - last_raw_x[id];
+                            int vy = ry - last_raw_y[id];
+                            int alpha_speed = abs(vx) + abs(vy);
+
+                            uint32_t dynamic_alpha;
+                            if (alpha_speed < 3) dynamic_alpha = 64;
+                            else if (alpha_speed < 12) dynamic_alpha = 115;
+                            else dynamic_alpha = 218;
+
+                            filtered_x[id] = (dynamic_alpha * (rx << 8) + 
+                                                (256 - dynamic_alpha) * filtered_x[id]) >> 8;
+                            filtered_y[id] = (dynamic_alpha * (ry << 8) + 
+                                                (256 - dynamic_alpha) * filtered_y[id]) >> 8;
                         }
 
                         uint16_t fx = (uint16_t)(filtered_x[id] >> 8);
                         uint16_t fy = (uint16_t)(filtered_y[id] >> 8);
 
-                        int dx_org = abs((int)mx - (int)origin_x[id]);
-                        int dy_org = abs((int)my - (int)origin_y[id]);
+                        int dx_raw = rx - last_raw_x[id];
+                        int dy_raw = ry - last_raw_y[id];
+                        if (abs(dx_raw) > abs(dy_raw) * 2 && abs(dy_raw) < 6) ry = last_raw_y[id];
+                        else if (abs(dy_raw) > abs(dx_raw) * 2 && abs(dx_raw) < 6) rx = last_raw_x[id];
 
-                        if (touch_state[id] == TOUCH_TAP_CANDIDATE && (dx_org > TAP_DEADZONE || dy_org > TAP_DEADZONE)) {
-                            touch_state[id] = TOUCH_DRAG;
-                            tap_frozen[id] = false;
-                        }
+                        int dx = abs((int)rx - (int)origin_x[id]);
+                            int dy = abs((int)ry - (int)origin_y[id]);
+
+                            if (touch_state[id] == TOUCH_TAP_CANDIDATE && (dx > TAP_DEADZONE || dy > TAP_DEADZONE)) {
+                                touch_state[id] = TOUCH_DRAG;
+                                tap_frozen[id] = false;
+                            }
 
                         if (touch_state[id] == TOUCH_TAP_CANDIDATE) {
                             if (!tap_frozen[id]) {
@@ -255,6 +267,25 @@ void goodix_i2c_task(void *arg) {
                             tap_frozen[id] = false;
                             tp_current_state.fingers[id].x = fx;
                             tp_current_state.fingers[id].y = fy;
+                        }
+
+                        int sum_x = 0, sum_y = 0, count = 0;
+                        for (int i = 0; i < 5; i++) {
+                            if (tap_frozen[i]) {
+                                sum_x += origin_x[i];
+                                sum_y += origin_y[i];
+                                count++;
+                            }
+                        }
+                        if (count > 1) {
+                            int avg_x = sum_x / count;
+                            int avg_y = sum_y / count;
+                            for (int i = 0; i < 5; i++) {
+                                if (tap_frozen[i]) {
+                                    origin_x[i] = avg_x;
+                                    origin_y[i] = avg_y;
+                                }
+                            }
                         }
 
                         if (!tap_frozen[id] && last_raw_x[id] != 0 && abs((int)mx - (int)last_raw_x[id]) > JUMP_THRESHOLD) {
