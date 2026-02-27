@@ -267,8 +267,8 @@ void goodix_i2c_task(void *arg) {
 
                         tp_current_state.fingers[id].tip_switch = 1;
                         tp_current_state.fingers[id].contact_id = id;
-                        has_data = true;
                     }
+                    has_data = true;
                 } else if (data[2] == 0x01) {
                     current_mode = MOUSE_MODE;
                     mouse_current_state.x = (int8_t)data[4];
@@ -282,7 +282,6 @@ void goodix_i2c_task(void *arg) {
         if (has_data) {
             last_report_time = now;
             if (current_mode == PTP_MODE) {
-                if (data[3] == 0x01) tp_current_state.actual_count = 0;
                 xQueueOverwrite(tp_queue, &tp_current_state);
             } else if (current_mode == MOUSE_MODE) {
                 xQueueOverwrite(mouse_queue, &mouse_current_state);
