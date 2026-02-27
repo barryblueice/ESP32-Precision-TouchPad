@@ -24,8 +24,9 @@ Also include a HP fingerprint module, in order to support fingerprint for Window
 
 > [!IMPORTANT]  
 > The pressure-sensitive touchpad promoted by Xiaomi merely replaced the traditional mechanical structure with a pressure-sensitive motor trigger. It is not a genuine pressure-sensing recognition (there is no pressure-sensing data).<br>
-> Due to the lack of relevant data, the reverse engineering of Goodix is currently underway.<br>
-> The reverse engineering of the HID Descriptor has been completed, as well as the optimization of the translation of touch HID messages and the report has been submitted, but the touch algorithm needs to be optimized.
+> ~~Due to the lack of relevant data, the reverse engineering of Goodix is currently underway.~~<br>
+> ~~The reverse engineering of the HID Descriptor has been completed, as well as the optimization of the translation of touch HID messages and the report has been submitted, but the touch algorithm needs to be optimized.~~
+> The problem with the Xiaomi touch panel was caused by PCB signal interference. It was resolved after re-laying the board.
 
 #### **PTP Mode Demonstration**:
 
@@ -104,8 +105,6 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
  - Multi-Port HID compatibility design may not support on some old system, like Windows XP.
  - Cannot perform rapid and consecutive clicks.
  - Due to processor limitation, Original PTP Mode can only support wire connect/2.4G wireless mode. <br>Bluetooth mode needs to use ESP32-S3.
- - XiaoMi book 2022 14/16 pro Goodix GT7863 TouchPad requires more algorithm support and optimization.
-   <br>The current operation is rather sluggish, not as smooth as the ELAN touchpad.
 
 ***
 
