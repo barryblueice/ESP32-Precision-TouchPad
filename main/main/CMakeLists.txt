@@ -6,21 +6,19 @@ set(srcs
     "wireless/heartbeat.c"
     "wireless/broadcast.c"
     "nvs/ptp_nvs.c"
+    "i2c/i2c_int.c"
+    "i2c/i2c_watchdog.c"
 )
 
 if(CONFIG_ELAN_LENOVO_33370A)
     list(APPEND srcs 
         "i2c/ELAN/elan_i2c.c"
-        "i2c/ELAN/elan_i2c_int.c"
-        "i2c/ELAN/elan_watchdog.c"
     )
 endif()
 
 if(CONFIG_MI_GOODIX_HAPTIC_ENGINE)
     list(APPEND srcs 
         "i2c/goodix/goodix_i2c.c"
-        "i2c/goodix/goodix_i2c_int.c"
-        "i2c/goodix/goodix_watchdog.c"
     )
 endif()
 

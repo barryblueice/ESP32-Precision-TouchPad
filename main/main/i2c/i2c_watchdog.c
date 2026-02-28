@@ -2,7 +2,12 @@
 #include "esp_timer.h"
 #include "esp_log.h"
 #include "i2c/I2C_HID_Report.h"
-#include "i2c/goodix/goodix_i2c.h"
+
+#if CONFIG_ELAN_LENOVO_33370A
+    #include "i2c/ELAN/elan_i2c.h"
+#elif CONFIG_MI_GOODIX_HAPTIC_ENGINE
+    #include "i2c/goodix/goodix_i2c.h"
+#endif
 
 static const char *TAG = "WATCHDOG";
 

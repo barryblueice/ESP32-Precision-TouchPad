@@ -93,8 +93,7 @@ extern i2c_master_bus_handle_t bus_handle;
 
 extern void elan_i2c_task(void *arg);
 extern void goodix_i2c_task(void *arg);
-extern void elan_tp_interrupt_init(void);
-extern void goodix_tp_interrupt_init(void);
+extern void i2c_tp_int_init(void);
 extern void elan_i2c_init();
 extern void goodix_i2c_init(void);
 
@@ -110,7 +109,7 @@ extern esp_err_t goodix_activate_mouse();
     #define LOGICAL_Y 0x26, 0xD5, 0x08
     #define tp_i2c_task elan_i2c_task
     #define i2c_tp_init elan_i2c_init
-    #define i2c_tp_int_init elan_tp_interrupt_init
+    #define TP_INT_GPIO 7
 #elif CONFIG_MI_GOODIX_HAPTIC_ENGINE
     #define activate_ptp goodix_activate_ptp
     #define activate_mouse goodix_activate_mouse
@@ -118,7 +117,7 @@ extern esp_err_t goodix_activate_mouse();
     #define LOGICAL_Y  0x26, 0x7F, 0x0D
     #define tp_i2c_task goodix_i2c_task
     #define i2c_tp_init goodix_i2c_init
-    #define i2c_tp_int_init goodix_tp_interrupt_init
+    #define TP_INT_GPIO 4
 #endif
 
 #endif
