@@ -20,6 +20,7 @@ if(CONFIG_MI_GOODIX_HAPTIC_ENGINE)
     list(APPEND srcs 
         "i2c/goodix/goodix_i2c.c"
         "i2c/goodix/goodix_i2c_int.c"
+        "i2c/goodix/goodix_watchdog.c"
     )
 endif()
 

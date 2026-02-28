@@ -105,6 +105,9 @@ void goodix_i2c_init(void) {
 #define SETTLING_MS 50
 #define FILTER_ALPHA 0.5f
 
+bool global_watchdog_start = false;
+uint16_t global_scan_time = 0;
+
 typedef enum {
     TOUCH_IDLE,
     TOUCH_TAP_CANDIDATE,
@@ -127,6 +130,7 @@ void goodix_i2c_task(void *arg) {
     static touch_state_t touch_state[5] = {0};
     static uint32_t filtered_x[5] = {0};
     static uint32_t filtered_y[5] = {0};
+    static uint8_t finger_life_status = 0;
     
     #define HISTORY_LEN 3
     static uint16_t raw_x_history[5][HISTORY_LEN] = {0};
@@ -157,10 +161,13 @@ void goodix_i2c_task(void *arg) {
         while (gpio_get_level(INT_IO) == 0 && safety-- > 0) {
             if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(5)) == ESP_OK) {
                 if (data[2] == 0x04) {
+                    has_data = true;
                     current_mode = PTP_MODE;
                     tp_current_state.scan_time = data[28] | (data[29] << 8);
+                    global_scan_time = tp_current_state.scan_time;
                     tp_current_state.button_mask = (data[31] & 0x01) ? 0x01 : 0x00;
                     tp_current_state.actual_count = data[30];
+                    finger_life_status = data[3];
 
                     for (int id = 0; id < 5; id++) {
                         uint8_t *f_ptr = &data[3 + (id * 5)];
@@ -299,7 +306,6 @@ void goodix_i2c_task(void *arg) {
                         tp_current_state.fingers[id].tip_switch = 1;
                         tp_current_state.fingers[id].contact_id = id;
                     }
-                    has_data = true;
                 } else if (data[2] == 0x01) {
                     current_mode = MOUSE_MODE;
                     mouse_current_state.x = (int8_t)data[4];
@@ -311,6 +317,12 @@ void goodix_i2c_task(void *arg) {
         }
 
         if (has_data) {
+            // ESP_DRAM_LOGI(TAG, "Actual Count: %d, Finger Life Status: %02x", tp_current_state.actual_count, finger_life_status);
+            if (tp_current_state.actual_count == 2 && finger_life_status == 0x01) {
+                global_watchdog_start = true;
+            } else {
+                global_watchdog_start = false;
+            }
             last_report_time = now;
             if (current_mode == PTP_MODE) {
                 xQueueOverwrite(tp_queue, &tp_current_state);

@@ -8,8 +8,14 @@
 void goodix_i2c_task(void *arg);
 void goodix_tp_interrupt_init(void);
 void goodix_i2c_init(void);
+void watchdog_timeout_callback(void* arg);
 
 esp_err_t goodix_activate_ptp();
 esp_err_t goodix_activate_mouse();
+
+extern esp_timer_handle_t timeout_watchdog_timer;
+extern bool global_watchdog_start;
+
+#define WATCHDOG_TIMEOUT_US (100 * 1000)
 
 #endif
