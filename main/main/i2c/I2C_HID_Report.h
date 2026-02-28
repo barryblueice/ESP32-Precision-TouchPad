@@ -114,7 +114,7 @@ extern esp_err_t goodix_activate_mouse();
     #define activate_ptp goodix_activate_ptp
     #define activate_mouse goodix_activate_mouse
     #define LOGICAL_X  0x26, 0x7F, 0x0D
-    #define LOGICAL_Y  0x26, 0x7F, 0x0D
+    #define LOGICAL_Y  0x26, 0x6F, 0x08
     #define tp_i2c_task goodix_i2c_task
     #define i2c_tp_init goodix_i2c_init
     #define TP_INT_GPIO 4
