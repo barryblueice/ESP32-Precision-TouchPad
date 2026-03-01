@@ -15,7 +15,7 @@ Also include a HP fingerprint module, in order to support fingerprint for Window
 
 ### **Currently Touchpad Support (already tested):**
  - Lenovo ELAN 33370A TouchPad (Rev.A S8974A, traditional mechanical design)
- - XiaoMi book 2022 14/16 pro Goodix GT7863 TouchPad (Partly support)
+ - XiaoMi book 2022 14/16 pro Goodix GT7863 TouchPad (Haptic Engine design)
 
 ### **Hardware OpenSource Link：[ESP32-Precision-TouchPad](https://oshwhub.com/barryblueice/esp32-precision-touchpad)**
 
@@ -82,7 +82,8 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
 
   ## Software:
   - [x] Recognized as a Microsoft Precision TouchPad
-  - [x] Driving ELAN TouchPad
+  - [x] ELAN TouchPad Support
+  - [x] Goodix TouchPad Support
   - [x] **Switching From Mouse Mode (Only One Finger) to Absolute Mode (Supported Multi Finger), [thanks to @ApprehensiveAnt9858](https://www.reddit.com/r/embedded/comments/1j3c2k6/need_help_getting_and_i2c_hid_elan_touchpad_to/)**
   - [x] Single Touch Support
   - [x] Multi Touch Support

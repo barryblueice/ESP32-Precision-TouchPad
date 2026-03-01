@@ -15,7 +15,7 @@
 
 ### **目前支持的触摸板型号（已经过测试）:**
  - 联想ELAN 33370A触摸板 (板号Rev.A S8974A, 传统机械设计)
- - 小米book pro 2022 14/16 汇顶 GT7863 压感触摸板（支持不全）
+ - 小米book pro 2022 14/16 汇顶 GT7863触摸板（压感触摸板）
    
 ### **硬件开源地址：[基于ESP32的Windows精确式触摸板](https://oshwhub.com/barryblueice/esp32-precision-touchpad)**
 
@@ -85,6 +85,7 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
   ## Software:
   - [x] Microsoft精确式触摸板握手
   - [x] ELAN TouchPad驱动
+  - [x] Goodix TouchPad驱动
   - [x] **从Mouse Mode (仅支持单指) 切换到Absolute Mode (支持多指), [感谢@ApprehensiveAnt9858](https://www.reddit.com/r/embedded/comments/1j3c2k6/need_help_getting_and_i2c_hid_elan_touchpad_to/)**
   - [x] 单指触摸支持
   - [x] 多指触摸支持
