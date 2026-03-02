@@ -30,11 +30,6 @@ i2c_master_bus_handle_t bus_handle = NULL;
 
 TaskHandle_t tp_read_task_handle = NULL;
 
-#define TAP_MOVE_THRESHOLD 10
-#define TAP_TIME_THRESHOLD 150
-#define DOUBLE_TAP_WINDOW  50
-#define MULTI_TAP_JOIN_MS 30
-
 esp_err_t goodix_activate_ptp() {
     uint8_t payload[] = {
         0x05, 0x00,             // Command Register
@@ -138,7 +133,6 @@ void goodix_i2c_task(void *arg) {
     static int consecutive_errors[5] = {0}; 
 
     uint8_t data[64];
-    const uint16_t JUMP_THRESHOLD = 800;
 
     while (1) {
         ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1));
@@ -293,14 +287,6 @@ void goodix_i2c_task(void *arg) {
                                     origin_y[i] = avg_y;
                                 }
                             }
-                        }
-
-                        if (!tap_frozen[id] && last_raw_x[id] != 0 && abs((int)mx - (int)last_raw_x[id]) > JUMP_THRESHOLD) {
-                            tp_current_state.fingers[id].x = last_raw_x[id];
-                            tp_current_state.fingers[id].y = last_raw_y[id];
-                        } else {
-                            last_raw_x[id] = mx;
-                            last_raw_y[id] = my;
                         }
 
                         tp_current_state.fingers[id].tip_switch = 1;
