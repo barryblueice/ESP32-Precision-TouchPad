@@ -75,7 +75,7 @@ char const* string_desc[] = {
     CONFIG_TOUCHPAD_MANUFACTURER_STRING,         // 1: Manufacturer
     CONFIG_TOUCHPAD_PRODUCT_STRING,              // 2: Product
     CONFIG_TOUCHPAD_SERIAL_NUMBER_STRING,        // 3: Serial Number
-    CONFIG_TOUCHPAD_HID_INTERFACE_STRING         // 4: HID Interface
+    "Precision Touchpad HID Interface"           // 4: HID Interface
 };
 
 // TinyUSB callbacks
