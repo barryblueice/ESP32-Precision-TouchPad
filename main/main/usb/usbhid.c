@@ -22,6 +22,8 @@
 
 #include "wireless/wireless.h"
 
+#include "sdkconfig.h"
+
 #define TPD_REPORT_SIZE   6
 
 static const char *TAG = "USB_HID_TP";
@@ -70,10 +72,10 @@ tusb_desc_device_t const desc_device = {
 // String Descriptors
 char const* string_desc[] = {
     (const char[]){0x09, 0x04},                  // 0: Language
-    "R-SODIUM Technology",                       // 1: Manufacturer
-    "R-SODIUM Precision TouchPad",               // 2: Product
-    "0D00072A00000000",                          // 3: Serial Number
-    "Precision Touchpad HID Interface"           // 4: HID Interface
+    CONFIG_TOUCHPAD_MANUFACTURER_STRING,         // 1: Manufacturer
+    CONFIG_TOUCHPAD_PRODUCT_STRING,              // 2: Product
+    CONFIG_TOUCHPAD_SERIAL_NUMBER_STRING,        // 3: Serial Number
+    CONFIG_TOUCHPAD_HID_INTERFACE_STRING         // 4: HID Interface
 };
 
 // TinyUSB callbacks
