@@ -17,6 +17,7 @@ menu "TouchPad Configuration"
         config  TOUCHPAD_HID_INTERFACE_STRING
             string "TouchPad HID Interface"
             default  "Precision Touchpad HID Interface"
+            depends on n
 
     endmenu
 
@@ -62,6 +63,7 @@ menu "TouchPad Configuration"
     
     config HANTICK_LENOVO_HTT5288
         bool "Lenovo HanTick HTT5288 TouchPad (HTX11974TI)"
+        depends on n
 
     config MI_GOODIX_HAPTIC_ENGINE
         bool "XiaoMi book 14/16 pro Goodix TouchPad"
