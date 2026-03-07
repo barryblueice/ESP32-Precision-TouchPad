@@ -34,6 +34,7 @@ static const char *TAG = "USB_HID_TP";
 #define REPORTID_PTPHQA           0x04
 #define REPORTID_FEATURE          0x05
 #define REPORTID_FUNCTION_SWITCH  0x06
+#define REPORTID_HAPTIC_FEATURE    0x0C
 
 #define TPD_REPORT_ID 0x01
 #define TPD_REPORT_SIZE_WITHOUT_ID (sizeof(touchpad_report_t) - 1)

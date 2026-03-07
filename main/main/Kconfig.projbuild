@@ -34,8 +34,7 @@ menu "TouchPad Configuration"
     menu  "Feature Options"
 
     config TOUCHPAD_HAPTIC_FEEDBACK
-        bool "Support Haptic Feedback (HID Page 0x0E)"
-        depends on n
+        bool "Support Haptic Feedback (Experimental)"
         default n
         help
         Enables support for Simple Haptic Controller. 
