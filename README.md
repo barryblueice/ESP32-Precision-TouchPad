@@ -23,7 +23,7 @@ Also include a HP fingerprint module, in order to support fingerprint for Window
 > Hardware & software only support the models of the touchpad mentioned above, untested touchpad models may be incompatible. <br>Use of such models can lead to driver failure or permanent hardware damage caused by short circuits!
 
 > [!IMPORTANT]  
-> The pressure-sensitive touchpad promoted by Xiaomi merely replaced the traditional mechanical structure with a pressure-sensitive motor trigger. It is not a complete pressure-sensing recognition (there is no pressure-sensing feedback adjustment).<br>
+> The pressure-sensitive touchpad promoted by Xiaomi merely replaced the traditional mechanical structure with a pressure-sensitive motor trigger, it is not a complete pressure-sensing recognition (there is no pressure-sensing feedback adjustment).<br>
 > ~~Due to the lack of relevant data, the reverse engineering of Goodix is currently underway.~~<br>
 > ~~The reverse engineering of the HID Descriptor has been completed, as well as the optimization of the translation of touch HID messages and the report has been submitted, but the touch algorithm needs to be optimized.~~<br>
 > The problem with the Xiaomi touch panel was caused by PCB signal interference. It was resolved after re-laying the board.
