@@ -5,6 +5,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 
+
+
 extern uint16_t global_scan_time;
 
 typedef struct {
@@ -127,5 +129,7 @@ extern esp_err_t goodix_activate_mouse();
     #define i2c_tp_init goodix_i2c_init
     #define TP_INT_GPIO 4
 #endif
+
+#define WATCHDOG_TIMEOUT_US (100 * 100)
 
 #endif

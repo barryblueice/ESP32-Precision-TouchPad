@@ -17,6 +17,4 @@ esp_err_t elan_activate_mouse();
 extern esp_timer_handle_t timeout_watchdog_timer;
 extern bool global_watchdog_start;
 
-#define WATCHDOG_TIMEOUT_US (100 * 1000)
-
 #endif
