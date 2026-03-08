@@ -36,7 +36,7 @@ void watchdog_timeout_callback(void* arg) {
             // ESP_DRAM_LOGW(TAG, "Watchdog triggered: Force simulating finger release for ID 0");
             vTaskDelay(pdMS_TO_TICKS(WATCHDOG_TIMEOUT_US / 1000));
             release_msg.actual_count = 0;
-            global_scan_time += 100;
+            release_msg.scan_time += 100;
             xQueueOverwrite(tp_queue, &release_msg);
             // ESP_DRAM_LOGW(TAG, "Watchdog triggered: Force simulating finger release for ID 0");
         }
