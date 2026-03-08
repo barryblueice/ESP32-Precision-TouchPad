@@ -23,7 +23,7 @@ Also include a HP fingerprint module, in order to support fingerprint for Window
 > Hardware & software only support the models of the touchpad mentioned above, untested touchpad models may be incompatible. <br>Use of such models can lead to driver failure or permanent hardware damage caused by short circuits!
 
 > [!IMPORTANT]  
-> The pressure-sensitive touchpad promoted by Xiaomi merely replaced the traditional mechanical structure with a pressure-sensitive motor trigger. It is not a genuine pressure-sensing recognition (there is no pressure-sensing data).<br>
+> The pressure-sensitive touchpad promoted by Xiaomi merely replaced the traditional mechanical structure with a pressure-sensitive motor trigger. It is not a complete pressure-sensing recognition (there is no pressure-sensing feedback adjustment).<br>
 > ~~Due to the lack of relevant data, the reverse engineering of Goodix is currently underway.~~<br>
 > ~~The reverse engineering of the HID Descriptor has been completed, as well as the optimization of the translation of touch HID messages and the report has been submitted, but the touch algorithm needs to be optimized.~~<br>
 > The problem with the Xiaomi touch panel was caused by PCB signal interference. It was resolved after re-laying the board.
@@ -101,8 +101,8 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
 
 # Current Issues:
 
- - Two fingers tap (equal to right click) can only trigger on laptop.<br>
-   > Regarding the solution for triggering double-finger touch on a Desktop PC, please refer to [System Tuning Guidelines](https://github.com/barryblueice/ESP32-Precision-TouchPad/wiki/System%20Tuning%20Guidelines).
+ - ~~Two fingers tap (equal to right click) can only trigger on laptop.~~<br>
+   > The triggering issue was caused by the missing of physical XY dimensions, and it has now been fixed.
  - Multi-Port HID compatibility design may not support on some old system, like Windows XP.
  - Cannot perform rapid and consecutive clicks.
  - Due to processor limitation, Original PTP Mode can only support wire connect/2.4G wireless mode. <br>Bluetooth mode needs to use ESP32-S3.
