@@ -107,6 +107,10 @@ extern esp_err_t goodix_activate_mouse();
     #define activate_mouse elan_activate_mouse
     #define LOGICAL_X 0x26, 0x5F, 0x0E
     #define LOGICAL_Y 0x26, 0xD5, 0x08
+    #define PHYSICAL_X 0x46, 0xB4, 0x2D
+    #define PHYSICAL_Y 0x46, 0x20, 0x1C
+    #define PHYSICAL_UNIT_EXPONENT 0x55, 0x0D
+    #define PHYSICAL_UNIT 0x65, 0x11
     #define tp_i2c_task elan_i2c_task
     #define i2c_tp_init elan_i2c_init
     #define TP_INT_GPIO 7
@@ -115,6 +119,10 @@ extern esp_err_t goodix_activate_mouse();
     #define activate_mouse goodix_activate_mouse
     #define LOGICAL_X  0x26, 0x7F, 0x0D
     #define LOGICAL_Y  0x26, 0x6F, 0x08
+    #define PHYSICAL_X 0x46, 0xF0, 0x01
+    #define PHYSICAL_Y 0x46, 0x46, 0x01
+    #define PHYSICAL_UNIT_EXPONENT 0x55, 0x0E
+    #define PHYSICAL_UNIT 0x65, 0x13
     #define tp_i2c_task goodix_i2c_task
     #define i2c_tp_init goodix_i2c_init
     #define TP_INT_GPIO 4
