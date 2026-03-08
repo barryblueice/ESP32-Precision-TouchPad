@@ -94,9 +94,9 @@ const uint8_t ptp_hid_report_descriptor[] = {
     LOGICAL_X,                          // LOGICAL_MAXIMUM
 
     0x35, 0x00,                         // PHYSICAL_MINIMUM (0)
-    PHYSICAL_X,                        // PHYSICAL_MAXIMUM
+    PHYSICAL_X,                         // PHYSICAL_MAXIMUM
     PHYSICAL_UNIT_EXPONENT,             // UNIT_EXPONENT (-3)
-   0x65, 0x11,                          // UNIT (Centimeter)
+    PHYSICAL_UNIT,                      // UNIT (Centimeter)
 
     0x75, 0x10,                         // REPORT_SIZE (16)
     0x95, 0x01,                         // REPORT_COUNT (1)
@@ -192,7 +192,7 @@ const uint8_t ptp_hid_report_descriptor[] = {
     0x35, 0x00,                         // PHYSICAL_MINIMUM (0)
     PHYSICAL_X,                         // PHYSICAL_MAXIMUM
     PHYSICAL_UNIT_EXPONENT,             // UNIT_EXPONENT (-3)
-   0x65, 0x11,                          // UNIT (Centimeter)
+    PHYSICAL_UNIT,                      // UNIT (Centimeter)
 
     0x75, 0x10,                         // REPORT_SIZE (16)
     0x95, 0x01,                         // REPORT_COUNT (1)
@@ -240,7 +240,7 @@ const uint8_t ptp_hid_report_descriptor[] = {
     0x35, 0x00,                         // PHYSICAL_MINIMUM (0)
     PHYSICAL_X,                         // PHYSICAL_MAXIMUM
     PHYSICAL_UNIT_EXPONENT,             // UNIT_EXPONENT (-3)
-   0x65, 0x11,                          // UNIT (Centimeter)
+    PHYSICAL_UNIT,                      // UNIT (Centimeter)
 
     0x75, 0x10,                         // REPORT_SIZE (16)
     0x95, 0x01,                         // REPORT_COUNT (1)
@@ -288,7 +288,7 @@ const uint8_t ptp_hid_report_descriptor[] = {
     0x35, 0x00,                         // PHYSICAL_MINIMUM (0)
     PHYSICAL_X,                         // PHYSICAL_MAXIMUM
     PHYSICAL_UNIT_EXPONENT,             // UNIT_EXPONENT (-3)
-   0x65, 0x11,                          // UNIT (Centimeter)
+    PHYSICAL_UNIT,                      // UNIT (Centimeter)
 
     0x75, 0x10,                         // REPORT_SIZE (16)
     0x95, 0x01,                         // REPORT_COUNT (1)
@@ -410,9 +410,9 @@ const uint8_t ptp_hid_report_descriptor[] = {
     LOGICAL_X,                          // LOGICAL_MAXIMUM
 
     0x35, 0x00,                         // PHYSICAL_MINIMUM (0)
-    PHYSICAL_X,                        // PHYSICAL_MAXIMUM
+    PHYSICAL_X,                         // PHYSICAL_MAXIMUM
     PHYSICAL_UNIT_EXPONENT,             // UNIT_EXPONENT (-3)
-   0x65, 0x11,                          // UNIT (Centimeter)
+    PHYSICAL_UNIT,                      // UNIT (Centimeter)
 
     0x75, 0x10,                         // REPORT_SIZE (16)
     0x95, 0x01,                         // REPORT_COUNT (1)
@@ -508,7 +508,7 @@ const uint8_t ptp_hid_report_descriptor[] = {
     0x35, 0x00,                         // PHYSICAL_MINIMUM (0)
     PHYSICAL_X,                         // PHYSICAL_MAXIMUM
     PHYSICAL_UNIT_EXPONENT,             // UNIT_EXPONENT (-3)
-   0x65, 0x11,                          // UNIT (Centimeter)
+    PHYSICAL_UNIT,                      // UNIT (Centimeter)
 
     0x75, 0x10,                         // REPORT_SIZE (16)
     0x95, 0x01,                         // REPORT_COUNT (1)
@@ -556,7 +556,7 @@ const uint8_t ptp_hid_report_descriptor[] = {
     0x35, 0x00,                         // PHYSICAL_MINIMUM (0)
     PHYSICAL_X,                         // PHYSICAL_MAXIMUM
     PHYSICAL_UNIT_EXPONENT,             // UNIT_EXPONENT (-3)
-   0x65, 0x11,                          // UNIT (Centimeter)
+    PHYSICAL_UNIT,                      // UNIT (Centimeter)
 
     0x75, 0x10,                         // REPORT_SIZE (16)
     0x95, 0x01,                         // REPORT_COUNT (1)
@@ -604,7 +604,7 @@ const uint8_t ptp_hid_report_descriptor[] = {
     0x35, 0x00,                         // PHYSICAL_MINIMUM (0)
     PHYSICAL_X,                         // PHYSICAL_MAXIMUM
     PHYSICAL_UNIT_EXPONENT,             // UNIT_EXPONENT (-3)
-   0x65, 0x11,                          // UNIT (Centimeter)
+    PHYSICAL_UNIT,                      // UNIT (Centimeter)
 
     0x75, 0x10,                         // REPORT_SIZE (16)
     0x95, 0x01,                         // REPORT_COUNT (1)
