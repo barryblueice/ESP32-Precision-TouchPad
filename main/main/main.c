@@ -26,6 +26,8 @@ void app_main(void) {
     main_queue_set = xQueueCreateSet(1 + 1);
     xQueueAddToSet(mouse_queue, main_queue_set);
     xQueueAddToSet(tp_queue, main_queue_set);
+
+    usb_event_group = xEventGroupCreate();
     
     xTaskCreate(usb_mount_task, "mode_sel", 4096, NULL, 11, NULL);
     

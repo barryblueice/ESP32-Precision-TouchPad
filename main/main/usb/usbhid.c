@@ -130,12 +130,85 @@ void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_
         enter_dfu_mode();
     }
 }
+#define USB_CONNECTED BIT0
+
+EventGroupHandle_t usb_event_group;
+
+static uint8_t last_ptp_input_mode = 0xFF;
+
+void usb_mount_task(void *arg) {
+    while (1) {
+
+        xEventGroupWaitBits(
+            usb_event_group,
+            USB_CONNECTED,
+            pdTRUE,
+            pdTRUE,
+            portMAX_DELAY
+        );
+
+        while (tud_mounted()) {
+
+            if (ptp_input_mode != last_ptp_input_mode) {
+
+                switch (ptp_input_mode) {
+
+                case 0x03:
+                    ESP_LOGI(TAG, "Mode 0x03 detected: Activating PTP");
+                    current_mode = PTP_MODE;
+                    activate_ptp();
+                    break;
+
+                case 0x02:
+                    if (wireless_mode == 1) {
+                        ESP_LOGI(TAG, "Mode 0x02 detected: Activating MOUSE");
+                        current_mode = MOUSE_MODE;
+                        activate_mouse();
+                    }
+                    break;
+
+                default:
+                    break;
+                }
+
+                last_ptp_input_mode = ptp_input_mode;
+            }
+
+            vTaskDelay(pdMS_TO_TICKS(20));
+        }
+    }
+}
+
+static void tinyusb_event_cb(tinyusb_event_t *event, void *arg) {
+    switch (event->id) {
+
+        case TINYUSB_EVENT_ATTACHED:
+            last_ptp_input_mode = 0xFF;
+            xEventGroupSetBits(usb_event_group, USB_CONNECTED);
+            break;
+
+        case TINYUSB_EVENT_DETACHED:
+            xEventGroupClearBits(usb_event_group, USB_CONNECTED);
+            ptp_input_mode = 0x00;
+            break;
+
+        case TINYUSB_EVENT_SUSPENDED:
+            break;
+
+        case TINYUSB_EVENT_RESUMED:
+            break;
+
+        default:
+            break;
+    }
+}
 
 void usbhid_init(void) {
     tinyusb_config_t tusb_cfg = TINYUSB_DEFAULT_CONFIG();
     tusb_cfg.descriptor.device = &desc_device;
     tusb_cfg.descriptor.full_speed_config = desc_configuration;
     tusb_cfg.descriptor.string = string_desc;
+    tusb_cfg.event_cb = tinyusb_event_cb;
     tusb_cfg.descriptor.string_count = sizeof(string_desc)/sizeof(string_desc[0]);
 
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
@@ -143,40 +216,6 @@ void usbhid_init(void) {
 
 #define PTP_CONFIDENCE_BIT (1 << 0)
 #define PTP_TIP_SWITCH_BIT (1 << 1)
-
-static uint8_t last_ptp_input_mode = 0xFF;
-
-void usb_mount_task(void *arg) {
-    while (1) {
-        if (tud_mounted()) {
-            if (ptp_input_mode != last_ptp_input_mode) {
-                switch (ptp_input_mode) {
-                case 0x03:
-                    ESP_LOGI(TAG, "Mode 0x03 detected: Activating PTP");
-                    current_mode = PTP_MODE;
-                    activate_ptp();
-                    // ESP_LOGI(TAG, "Mode 0x01 detected: Activating ELAN MOUSE");
-                    // current_mode = MOUSE_MODE;
-                    // elan_activate_mouse();
-                    break;
-                case 0x00:
-                    if (wireless_mode == 1) {
-                        ESP_LOGI(TAG, "Mode 0x01 detected: Activating MOUSE");
-                        current_mode = MOUSE_MODE;
-                        activate_mouse();
-                        break;
-                    }
-                default:
-                    break;
-                }
-                last_ptp_input_mode = ptp_input_mode;
-            }
-        } else {
-            ptp_input_mode = 0x00;
-        }
-        vTaskDelay(100);
-    }
-}
 
 void usbhid_task(void *arg) {
     tp_multi_msg_t msg;
