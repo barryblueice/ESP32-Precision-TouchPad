@@ -105,15 +105,18 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
 
  - ~~双指轻触（相当于鼠标右键单击）只能在笔记本平台上触发。~~<br>
    > 触发问题是由于物理XY尺寸缺失导致，现已修复。
- - 为兼容而设计的HID多端口方案在部分老系统上可能无法使用，例如Windows XP。
+ - ~~为兼容而设计的HID多端口方案在部分老系统上可能无法使用，例如Windows XP。~~<br>
+   > 这是由于HID Descriptor的BUG导致，现已修复。
  - 不能快速连续单击。
  - 由于处理器限制，原生PTP Mode仅支持有线连接模式/2.4G无线模式。<br>蓝牙模式需要后期更换为ESP32-S3。
 
  ***
 
 # 目前支持的系统（已经过测试）：
-
- - Windows 7 （鼠标模式），Windows 10/11（精确式触摸板模式）；
+ 
+ - Windows XP （鼠标模式）；
+ - Windows 7 （鼠标模式）；
+ - Windows 10/11（精确式触摸板模式）；
  - Ubuntu 22.04及更新版本系统；
  - Color OS 17 （基于Android 16），测试设备为一加Ace2（精确式触摸板模式）；
  - HP / MSI BIOS（鼠标模式）

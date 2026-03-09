@@ -103,7 +103,8 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
 
  - ~~Two fingers tap (equal to right click) can only trigger on laptop.~~<br>
    > The triggering issue was caused by the missing of physical XY dimensions, and it has now been fixed.
- - Multi-Port HID compatibility design may not support on some old system, like Windows XP.
+ - ~~Multi-Port HID compatibility design may not support on some old system, like Windows XP.~~<br>
+   > This was caused by a bug in the HID Descriptor I programmed, and it has now been fixed.
  - Cannot perform rapid and consecutive clicks.
  - Due to processor limitation, Original PTP Mode can only support wire connect/2.4G wireless mode. <br>Bluetooth mode needs to use ESP32-S3.
 
@@ -111,7 +112,9 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
 
 # Current Support System (already tested):
 
- - Windows 7 (Mouse Mode), Windows 10/11 (PTP Mode);
+ - Windows XP (Mouse Mode);
+ - Windows 7 (Mouse Mode);
+ - Windows 10/11 (PTP Mode);
  - Ubuntu 22.04 or newer (PTP Mode);
  - Oxygen OS 17 (based on Android 16) on PHK110 (PTP Mode);
  - HP / MSI BIOS (Mouse Mode)
