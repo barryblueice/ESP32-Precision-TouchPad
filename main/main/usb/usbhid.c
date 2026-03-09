@@ -146,6 +146,9 @@ void usb_mount_task(void *arg) {
             pdTRUE,
             portMAX_DELAY
         );
+        
+        ptp_input_mode = 0x00; 
+        last_ptp_input_mode = 0xFF;
 
         while (tud_mounted()) {
 
@@ -154,15 +157,9 @@ void usb_mount_task(void *arg) {
                 switch (ptp_input_mode) {
 
                 case 0x03:
-                    if (last_ptp_input_mode != 0xFF) {
-                        ESP_LOGI(TAG, "Mode 0x03 detected: Activating PTP");
-                        current_mode = PTP_MODE;
-                        activate_ptp();
-                    } else {
-                        ESP_LOGW(TAG, "Last mode unknown, defaulting to mouse mode on connection for full compatibility!");
-                        current_mode = MOUSE_MODE;
-                        activate_mouse();
-                    }
+                    ESP_LOGI(TAG, "Mode 0x03 detected: Activating PTP");
+                    current_mode = PTP_MODE;
+                    activate_ptp();
                     break;
 
                 case 0x02:
@@ -198,7 +195,6 @@ static void tinyusb_event_cb(tinyusb_event_t *event, void *arg) {
     switch (event->id) {
 
         case TINYUSB_EVENT_ATTACHED:
-            last_ptp_input_mode = 0xFF;
             xEventGroupSetBits(usb_event_group, USB_CONNECTED);
             break;
 
