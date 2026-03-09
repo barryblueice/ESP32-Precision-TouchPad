@@ -49,7 +49,7 @@ esp_err_t elan_activate_ptp() {
 esp_err_t elan_activate_mouse() {
     uint8_t payload[] = {
         0x05, 0x00,
-        0x33, 0x03,
+        0x33, 0x01,
         0x06, 0x00,
         0x05, 0x00,
         0x01, 0x00, 0x00        // Value: Enable Mouse Mode
