@@ -154,9 +154,15 @@ void usb_mount_task(void *arg) {
                 switch (ptp_input_mode) {
 
                 case 0x03:
-                    ESP_LOGI(TAG, "Mode 0x03 detected: Activating PTP");
-                    current_mode = PTP_MODE;
-                    activate_ptp();
+                    if (last_ptp_input_mode != 0xFF) {
+                        ESP_LOGI(TAG, "Mode 0x03 detected: Activating PTP");
+                        current_mode = PTP_MODE;
+                        activate_ptp();
+                    } else {
+                        ESP_LOGW(TAG, "Last mode unknown, defaulting to mouse mode on connection for full compatibility!");
+                        current_mode = MOUSE_MODE;
+                        activate_mouse();
+                    }
                     break;
 
                 case 0x02:
@@ -183,7 +189,7 @@ void usb_mount_task(void *arg) {
                 last_ptp_input_mode = ptp_input_mode;
             }
 
-            vTaskDelay(pdMS_TO_TICKS(20));
+            vTaskDelay(pdMS_TO_TICKS(100));
         }
     }
 }
