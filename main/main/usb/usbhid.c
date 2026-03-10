@@ -162,24 +162,12 @@ void usb_mount_task(void *arg) {
                     activate_ptp();
                     break;
 
-                case 0x02:
+                default:
                     if (wireless_mode == 1) {
-                        ESP_LOGI(TAG, "Mode 0x02 detected: Activating MOUSE");
+                        ESP_LOGW(TAG, "Mode 0x%02X detected: Activating Default Mouse Mode", ptp_input_mode);
                         current_mode = MOUSE_MODE;
                         activate_mouse();
                     }
-                    break;
-
-                case 0x00:
-                    if (wireless_mode == 1) {
-                            ESP_LOGI(TAG, "Mode 0x00 detected: Activating Default Mouse Mode");
-                            current_mode = MOUSE_MODE;
-                            activate_mouse();
-                        }
-                    break;
-
-                default:
-                    ESP_LOGW(TAG, "Unknown mode detected: 0x%02X", ptp_input_mode);
                     break;
                 }
 
