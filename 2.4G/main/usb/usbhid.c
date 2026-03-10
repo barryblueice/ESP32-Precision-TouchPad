@@ -63,7 +63,18 @@ char const* string_desc[] = {
 
 // TinyUSB callbacks
 uint8_t const *tud_hid_descriptor_report_cb(uint8_t instance) {
-    return (instance == 0) ? ptp_hid_report_descriptor : mouse_hid_report_descriptor;
+    // return (instance == 0) ? ptp_hid_report_descriptor : mouse_hid_report_descriptor;
+    switch (instance) {
+    case 0:
+        return generic_hid_report_descriptor;
+    case 1:
+        return ptp_hid_report_descriptor;
+    case 2:
+        return mouse_hid_report_descriptor;
+    default:
+        return NULL;
+    }
+    return NULL;
 }
 
 uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t *buffer, uint16_t reqlen) {
@@ -95,18 +106,12 @@ void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_
     }
 }
 
-void usbhid_init(void) {
-    tinyusb_config_t tusb_cfg = TINYUSB_DEFAULT_CONFIG();
-    tusb_cfg.descriptor.device = &desc_device;
-    tusb_cfg.descriptor.full_speed_config = desc_configuration;
-    tusb_cfg.descriptor.string = string_desc;
-    tusb_cfg.descriptor.string_count = sizeof(string_desc)/sizeof(string_desc[0]);
-
-    ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
-}
-
 #define PTP_CONFIDENCE_BIT (1 << 0)
 #define PTP_TIP_SWITCH_BIT (1 << 1)
+
+#define USB_CONNECTED BIT0
+
+EventGroupHandle_t usb_event_group;
 
 // #define RAW_X_MAX 3679
 // #define RAW_Y_MAX 2261
@@ -116,33 +121,107 @@ static uint8_t last_ptp_input_mode = 0xFF;
 
 void usb_mount_task(void *arg) {
     while (1) {
-        if (tud_mounted()) {
+
+        xEventGroupWaitBits(
+            usb_event_group,
+            USB_CONNECTED,
+            pdTRUE,
+            pdTRUE,
+            portMAX_DELAY
+        );
+        
+        ptp_input_mode = 0x00; 
+        last_ptp_input_mode = 0xFF;
+
+        while (tud_mounted()) {
+
             if (ptp_input_mode != last_ptp_input_mode) {
+
                 switch (ptp_input_mode) {
+
                 case 0x03:
-                    ESP_LOGI(TAG, "Mode 0x03 detected: Activating ELAN PTP");
+                    ESP_LOGI(TAG, "Mode 0x03 detected: Activating PTP");
                     current_mode = PTP_MODE;
-                    // elan_activate_ptp();
-                    // ESP_LOGI(TAG, "Mode 0x01 detected: Activating ELAN MOUSE");
-                    // current_mode = MOUSE_MODE;
-                    // elan_activate_mouse();
                     break;
-                case 0x00:
-                    ESP_LOGI(TAG, "Mode 0x01 detected: Activating ELAN MOUSE");
-                    current_mode = MOUSE_MODE;
-                    // elan_activate_mouse();
-                    break;
+
                 default:
+                    ESP_LOGW(TAG, "Mode 0x%02X detected: Activating Default Mouse Mode", ptp_input_mode);
+                    current_mode = MOUSE_MODE;
                     break;
                 }
                 esp_now_send(broadcast_mac, (const uint8_t *)&current_mode, 1);
+
                 last_ptp_input_mode = ptp_input_mode;
             }
-        } else {
-            ptp_input_mode = 0x00;
+
+            vTaskDelay(pdMS_TO_TICKS(100));
         }
-        vTaskDelay(100);
     }
+}
+
+static void tinyusb_event_cb(tinyusb_event_t *event, void *arg) {
+    switch (event->id) {
+
+        case TINYUSB_EVENT_ATTACHED:
+            xEventGroupSetBits(usb_event_group, USB_CONNECTED);
+            break;
+
+        case TINYUSB_EVENT_DETACHED:
+            xEventGroupClearBits(usb_event_group, USB_CONNECTED);
+            ptp_input_mode = 0x00;
+            break;
+
+        case TINYUSB_EVENT_SUSPENDED:
+            break;
+
+        case TINYUSB_EVENT_RESUMED:
+            break;
+
+        default:
+            break;
+    }
+}
+
+// void usb_mount_task(void *arg) {
+//     while (1) {
+//         if (tud_mounted()) {
+//             if (ptp_input_mode != last_ptp_input_mode) {
+//                 switch (ptp_input_mode) {
+//                 case 0x03:
+//                     ESP_LOGI(TAG, "Mode 0x03 detected: Activating ELAN PTP");
+//                     current_mode = PTP_MODE;
+//                     // elan_activate_ptp();
+//                     // ESP_LOGI(TAG, "Mode 0x01 detected: Activating ELAN MOUSE");
+//                     // current_mode = MOUSE_MODE;
+//                     // elan_activate_mouse();
+//                     break;
+//                 case 0x00:
+//                     ESP_LOGI(TAG, "Mode 0x01 detected: Activating ELAN MOUSE");
+//                     current_mode = MOUSE_MODE;
+//                     // elan_activate_mouse();
+//                     break;
+//                 default:
+//                     break;
+//                 }
+//                 esp_now_send(broadcast_mac, (const uint8_t *)&current_mode, 1);
+//                 last_ptp_input_mode = ptp_input_mode;
+//             }
+//         } else {
+//             ptp_input_mode = 0x00;
+//         }
+//         vTaskDelay(100);
+//     }
+// }
+
+void usbhid_init(void) {
+    tinyusb_config_t tusb_cfg = TINYUSB_DEFAULT_CONFIG();
+    tusb_cfg.descriptor.device = &desc_device;
+    tusb_cfg.descriptor.full_speed_config = desc_configuration;
+    tusb_cfg.descriptor.string = string_desc;
+    tusb_cfg.event_cb = tinyusb_event_cb;
+    tusb_cfg.descriptor.string_count = sizeof(string_desc)/sizeof(string_desc[0]);
+
+    ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 }
 
 void usbhid_task(void *arg) {
@@ -154,15 +233,15 @@ void usbhid_task(void *arg) {
 
         if (xActivatedMember == mouse_queue) {
             if (xQueueReceive(mouse_queue, &mouse_report, 0)) {
-                if (tud_hid_n_ready(1)) {
-                    tud_hid_n_report(1, REPORTID_MOUSE, &mouse_report, sizeof(mouse_report));
+                if (tud_hid_n_ready(2)) {
+                    tud_hid_n_report(2, REPORTID_MOUSE, &mouse_report, sizeof(mouse_report));
                 }
             }
         } 
         else if (xActivatedMember == tp_queue) {
             if (xQueueReceive(tp_queue, &tp_report, 0)) {
-                if (tud_hid_n_ready(0)) {
-                    tud_hid_n_report(0, REPORTID_TOUCHPAD, &tp_report, sizeof(tp_report));
+                if (tud_hid_n_ready(1)) {
+                    tud_hid_n_report(1, REPORTID_TOUCHPAD, &tp_report, sizeof(tp_report));
                 }
             }
         }
