@@ -5,7 +5,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 
-
+extern uint16_t watchdog_x;
+extern uint16_t watchdog_y;
 
 extern uint16_t global_scan_time;
 

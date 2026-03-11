@@ -306,8 +306,13 @@ void goodix_i2c_task(void *arg) {
             // ESP_DRAM_LOGI(TAG, "Actual Count: %d, Finger Life Status: %02x", tp_current_state.actual_count, finger_life_status);
             if (tp_current_state.actual_count == 2 && finger_life_status == 0x01) {
                 global_watchdog_start = true;
+                watchdog_x = tp_current_state.fingers[0].x;
+                watchdog_y = tp_current_state.fingers[0].y;
             } else {
                 global_watchdog_start = false;
+            }
+            if (tp_current_state.actual_count == 0) {
+                return;
             }
             last_report_time = now;
             if (current_mode == PTP_MODE) {
