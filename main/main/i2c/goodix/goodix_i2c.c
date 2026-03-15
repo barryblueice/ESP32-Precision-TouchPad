@@ -119,7 +119,6 @@ void goodix_i2c_task(void *arg) {
     static uint16_t last_raw_y[5] = {0};
     static uint16_t origin_x[5] = {0};
     static uint16_t origin_y[5] = {0};
-    static int64_t last_report_time = 0;
     static bool tap_frozen[5] = {false};
     static touch_state_t touch_state[5] = {0};
     static uint32_t filtered_x[5] = {0};
@@ -154,9 +153,8 @@ void goodix_i2c_task(void *arg) {
                     finger_life_status = data[3];
 
                     for (int id = 0; id < 5; id++) {
-                        tp_current_state.fingers[id].confidence = 1;
                         uint8_t *f_ptr = &data[3 + (id * 5)];
-                        bool is_valid_touch = (f_ptr[0] & 0x01);
+                        tp_current_state.fingers[id].confidence = (f_ptr[0] & 0x01);
                         uint16_t rx = f_ptr[1] | (f_ptr[2] << 8);
                         uint16_t ry = f_ptr[3] | (f_ptr[4] << 8);
 
@@ -299,7 +297,6 @@ void goodix_i2c_task(void *arg) {
             // if (tp_current_state.actual_count == 0) {
             //     return;
             // }
-            last_report_time = now;
             if (current_mode == PTP_MODE) {
                 xQueueOverwrite(tp_queue, &tp_current_state);
             } else if (current_mode == MOUSE_MODE) {
