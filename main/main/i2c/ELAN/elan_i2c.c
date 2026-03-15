@@ -125,18 +125,6 @@ void elan_i2c_task(void *arg) {
     static uint32_t filtered_y[5] = {0};
     static uint8_t finger_life_status = 0;
 
-    static tp_finger_t cached_id0 = {0};
-    static bool has_cached_id0 = false;
-
-    typedef enum {
-        GATE_IDLE = 0,
-        GATE_WAIT_SECOND,
-        GATE_DUAL_ACTIVE
-    } id0_gate_state_t;
-
-    static id0_gate_state_t gate_state = GATE_IDLE;
-    static int64_t gate_start_time = 0;
-
     #define DUAL_WAIT_TIMEOUT_MS 8
 
     uint8_t data[64];
@@ -160,6 +148,7 @@ void elan_i2c_task(void *arg) {
         int safety = 10;
         while (gpio_get_level(INT_IO) == 0 && safety-- > 0) {
             if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(5)) == ESP_OK) {
+                has_data = true;
                 tp_current_state.button_mask = (data[11] & 0x01) ? 0x01 : 0x00;
 
                 if (data[2] == 0x04) {
@@ -257,46 +246,18 @@ void elan_i2c_task(void *arg) {
 
                             last_raw_x[id] = rx;
                             last_raw_y[id] = ry;
-
-                            if (id == 0) {
-                                cached_id0.x = fx;
-                                cached_id0.y = fy;
-                                cached_id0.tip_switch = 1;
-                                cached_id0.contact_id = 0;
-                                has_cached_id0 = true;
-
-                                tp_current_state.fingers[0].tip_switch = 0;
-                            } else {
-                                tp_current_state.fingers[id].x = fx;
-                                tp_current_state.fingers[id].y = fy;
-                                tp_current_state.fingers[id].tip_switch = 1;
-                                tp_current_state.fingers[id].contact_id = id;
-                            }
-
-                            has_data = true;
-                        } else {
-                            if (id == 0) {
-                                has_cached_id0 = false;
-                                gate_state = GATE_IDLE;
-                            }
-
-                            tp_current_state.fingers[id].tip_switch = 0;
-                            tp_current_state.fingers[id].x = last_raw_x[id];
-                            tp_current_state.fingers[id].y = last_raw_y[id];
-
-                            last_raw_x[id] = 0;
-                            last_raw_y[id] = 0;
-                            origin_x[id] = 0;
-                            origin_y[id] = 0;
-                            filtered_x[id] = 0;
-                            filtered_y[id] = 0;
-                            tap_frozen[id] = false;
-                            touch_state[id] = TOUCH_IDLE;
-
-                            has_data = true;
                         }
+
+                        if ((finger_life_status & 0x0F) == 0x03) {
+                            tp_current_state.fingers[id].tip_switch = 1;
+                        } else {
+                            tp_current_state.fingers[id].tip_switch = 0;
+                        }
+                        tp_current_state.fingers[id].confidence = 1;
+                        tp_current_state.fingers[id].contact_id = id;
                     }
                 } else if (data[2] == 0x01) {
+                    has_data = true;
                     current_mode = MOUSE_MODE;
                     mouse_current_state.x = (int8_t)data[4];
                     mouse_current_state.y = (int8_t)data[5];
@@ -309,77 +270,16 @@ void elan_i2c_task(void *arg) {
 
         if (current_mode == PTP_MODE) {
             if (has_data || tp_current_state.button_mask) {
-                uint8_t active_count = 0;
-                for (int i = 0; i < 5; i++) {
-                    if (tp_current_state.fingers[i].tip_switch) active_count++;
-                }
 
-                switch (gate_state) {
-                    case GATE_IDLE:
-
-                        if (finger_life_status == 0x01 && has_cached_id0) {
-                            gate_state = GATE_WAIT_SECOND;
-                            gate_start_time = now;
-
-                            tp_current_state.fingers[0].tip_switch = 0;
-                            active_count = 0;
-                        } else if (has_cached_id0) {
-                            tp_current_state.fingers[0] = cached_id0;
-                        }
-                        break;
-
-
-                    case GATE_WAIT_SECOND:
-
-                        if (finger_life_status == 0x11) {
-                            tp_current_state.fingers[0] = cached_id0;
-                            gate_state = GATE_DUAL_ACTIVE;
-                        }
-                        else if ((now - gate_start_time) > DUAL_WAIT_TIMEOUT_MS) {
-                            tp_current_state.fingers[0] = cached_id0;
-                            gate_state = GATE_IDLE;
-                        }
-                        else {
-                            tp_current_state.fingers[0].tip_switch = 0;
-                        }
-
-                        break;
-
-
-                    case GATE_DUAL_ACTIVE:
-
-                        if (active_count <= 1) {
-
-                            gate_state = GATE_IDLE;
-                            has_cached_id0 = false;
-                            memset(&cached_id0, 0, sizeof(tp_finger_t));
-
-                        }
-                        else if (has_cached_id0) {
-                            tp_current_state.fingers[0] = cached_id0;
-                        }
-
-                        break;
-                }
+                tp_current_state.actual_count = ((finger_life_status >> 4) & 0x0F) + 1;
 
                 if (finger_life_status == 0x11) {
-                    global_watchdog_start = true;        
-                    release_msg.fingers[0].x = watchdog_x;
-                    release_msg.fingers[0].y = watchdog_y;
+                    global_watchdog_start = true;
+                    watchdog_x = tp_current_state.fingers[0].x;
+                    watchdog_y = tp_current_state.fingers[0].y;
                 } else {
                     global_watchdog_start = false;
                 }
-
-                if (tp_current_state.actual_count == 0) {
-                    return;
-                }
-
-                active_count = 0;
-                for (int i = 0; i < 5; i++)
-                    if (tp_current_state.fingers[i].tip_switch)
-                        active_count++;
-                tp_current_state.actual_count = active_count;
-
                 last_report_time = now;
                 xQueueOverwrite(tp_queue, &tp_current_state);
             }
