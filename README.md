@@ -106,7 +106,8 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
    > To ensure the best compatibility among different touchpad devices, the receiver will not report the PHYSICAL coordinates. Some functions maybe unavailable.
  - ~~Multi-Port HID compatibility design may not support on some old system, like Windows XP.~~<br>
    > This was caused by a bug in the HID Descriptor I programmed, and it has now been fixed.
- - Cannot perform rapid and consecutive clicks.
+ - ~~Cannot perform rapid and consecutive clicks.~~
+   > This was caused by missing of confidence & Tip in the HID message, and it has now been fixed.
  - Due to processor limitation, Original PTP Mode can only support wire connect/2.4G wireless mode. <br>Bluetooth mode needs to use ESP32-S3.
 
 ***
