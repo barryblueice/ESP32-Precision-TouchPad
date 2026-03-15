@@ -97,7 +97,6 @@ void goodix_i2c_init(void) {
 }
 
 #define TAP_DEADZONE 30
-#define SETTLING_MS 50
 #define FILTER_ALPHA 0.5f
 
 bool global_watchdog_start = false;
@@ -142,15 +141,6 @@ void goodix_i2c_task(void *arg) {
         bool has_data = false;
         int64_t now = esp_timer_get_time() / 1000;
 
-        if (now - last_report_time > SETTLING_MS) {
-            for (int i = 0; i < 5; i++) {
-                last_raw_x[i] = 0; last_raw_y[i] = 0;
-                origin_x[i] = 0; origin_y[i] = 0;
-                consecutive_errors[i] = 0;
-                memset(raw_x_history[i], 0, sizeof(raw_x_history[i]));
-            }
-        }
-
         int safety = 10;
         while (gpio_get_level(INT_IO) == 0 && safety-- > 0) {
             if (i2c_master_receive(dev_handle, data, sizeof(data), pdMS_TO_TICKS(5)) == ESP_OK) {
@@ -169,15 +159,6 @@ void goodix_i2c_task(void *arg) {
                         bool is_valid_touch = (f_ptr[0] & 0x01);
                         uint16_t rx = f_ptr[1] | (f_ptr[2] << 8);
                         uint16_t ry = f_ptr[3] | (f_ptr[4] << 8);
-
-                        if (!is_valid_touch || rx == 0 || ry == 0) {
-                            last_raw_x[id] = 0; last_raw_y[id] = 0;
-                            consecutive_errors[id] = 0;
-                            memset(raw_x_history[id], 0, sizeof(raw_x_history[id]));
-                            tp_current_state.fingers[id].confidence = 0;
-                            tp_current_state.fingers[id].tip_switch = 0;
-                            continue;
-                        }
 
                         for (int h = 0; h < HISTORY_LEN - 1; h++) {
                             raw_x_history[id][h] = raw_x_history[id][h+1];

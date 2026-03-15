@@ -102,7 +102,6 @@ void elan_i2c_init(void) {
 }
 
 #define TAP_DEADZONE 30
-#define STALE_MS     50
 
 typedef enum {
     TOUCH_IDLE,
