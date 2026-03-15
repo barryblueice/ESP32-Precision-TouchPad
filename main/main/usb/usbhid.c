@@ -213,9 +213,6 @@ void usbhid_init(void) {
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 }
 
-#define PTP_CONFIDENCE_BIT (1 << 0)
-#define PTP_TIP_SWITCH_BIT (1 << 1)
-
 void usbhid_task(void *arg) {
     tp_multi_msg_t msg;
     mouse_msg_t mouse_msg;
@@ -261,40 +258,26 @@ void usbhid_task(void *arg) {
 
                 ptp_report_t report = {0};
 
-                // uint32_t now = esp_timer_get_time() / 100;
-                // if (now <= last_scan_time) {
-                //     now = last_scan_time + 1;
-                // }
-                // last_scan_time = now;
-                // report.scan_time = (uint16_t)now;
 
                 report.scan_time = msg.scan_time;
                 
                 for (int i = 0; i < 5; i++) {
-                    if (msg.fingers[i].tip_switch) {
-                        // uint16_t tx = (msg.fingers[i].x * HID_MAX + RAW_X_MAX / 2) / RAW_X_MAX;
-                        // uint16_t ty = (msg.fingers[i].y * HID_MAX + RAW_Y_MAX / 2) / RAW_Y_MAX;
-                        uint16_t tx = msg.fingers[i].x;
-                        uint16_t ty = msg.fingers[i].y;
-                        // if (tx > HID_MAX) tx = HID_MAX;
-                        // if (ty > HID_MAX) ty = HID_MAX;
-                        uint8_t contact_id = i; 
-
-                        report.fingers[i].tip_conf_id = PTP_CONFIDENCE_BIT | PTP_TIP_SWITCH_BIT | (contact_id << 2);
-                        report.fingers[i].x = tx;
-                        report.fingers[i].y = ty;
+                    report.fingers[i].x = msg.fingers[i].x;
+                    report.fingers[i].y = msg.fingers[i].y;
+                    
+                    uint8_t base_id;
+                    if (msg.fingers[i].confidence == 1) {
+                        base_id = msg.fingers[i].tip_switch ? 0x03 : 0x01;
                     } else {
-                        report.fingers[i].tip_conf_id = (i << 2);
-                        report.fingers[i].x = 0;
-                        report.fingers[i].y = 0;
+                        base_id = 0x02;
                     }
+
+                    report.fingers[i].tip_conf_id = (i << 2) | base_id;
                 }
 
                 report.contact_count = msg.actual_count;
 
                 report.buttons = (msg.button_mask > 0) ? 0x01 : 0x00;
-
-                // ESP_DRAM_LOGI(TAG, "X: %d, Y:%d", report.fingers[0].x, report.fingers[0].y);
 
                 if (wireless_mode == 1) {
                     if (tud_hid_n_ready(1)) {

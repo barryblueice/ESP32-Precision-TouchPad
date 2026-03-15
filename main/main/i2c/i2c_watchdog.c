@@ -26,7 +26,8 @@ void watchdog_timeout_callback(void* arg) {
         release_msg.scan_time = global_scan_time;
 
         release_msg.fingers[0].contact_id = 0;
-        release_msg.fingers[0].tip_switch = 1;
+        release_msg.fingers[0].tip_switch = 0;
+        release_msg.fingers[0].confidence = 1;
         
         release_msg.fingers[0].x = watchdog_x;
         release_msg.fingers[0].y = watchdog_y;
