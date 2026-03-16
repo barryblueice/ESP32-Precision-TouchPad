@@ -23,6 +23,7 @@ esp_err_t elan_activate_ptp() {
 
 void app_main(void) {
     gpio_set_direction(3, GPIO_MODE_OUTPUT);
+    gpio_set_direction(4, GPIO_MODE_INPUT);
     gpio_set_level(3, 0);
     vTaskDelay(pdMS_TO_TICKS(100));
     gpio_set_level(3, 1);
