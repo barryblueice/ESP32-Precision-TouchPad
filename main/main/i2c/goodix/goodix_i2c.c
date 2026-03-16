@@ -138,7 +138,6 @@ void goodix_i2c_task(void *arg) {
         tp_multi_msg_t tp_current_state = {0};
         mouse_msg_t mouse_current_state = {0};
         bool has_data = false;
-        int64_t now = esp_timer_get_time() / 1000;
 
         int safety = 10;
         while (gpio_get_level(INT_IO) == 0 && safety-- > 0) {
