@@ -255,6 +255,7 @@ void elan_i2c_task(void *arg) {
             if (has_data || tp_current_state.button_mask) {
 
                 tp_current_state.actual_count = ((finger_life_status >> 4) & 0x0F) + 1;
+                xQueueOverwrite(tp_queue, &tp_current_state);
 
                 if (finger_life_status == 0x11) {
                     global_watchdog_start = true;
@@ -263,7 +264,6 @@ void elan_i2c_task(void *arg) {
                 } else {
                     global_watchdog_start = false;
                 }
-                xQueueOverwrite(tp_queue, &tp_current_state);
             }
         } else if (current_mode == MOUSE_MODE) {
             xQueueOverwrite(mouse_queue, &mouse_current_state);
