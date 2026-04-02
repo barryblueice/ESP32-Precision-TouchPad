@@ -109,8 +109,8 @@ extern esp_err_t goodix_activate_mouse();
 #if CONFIG_ELAN_LENOVO_33370A
     #define activate_ptp elan_activate_ptp
     #define activate_mouse elan_activate_mouse
-    #define LOGICAL_X 0x26, 0x5F, 0x0E
-    #define LOGICAL_Y 0x26, 0xD5, 0x08
+    #define LOGICAL_X  0x26, 0x5F, 0x0E
+    #define LOGICAL_Y  0x26, 0xD5, 0x08
     #define PHYSICAL_X 0x46, 0xB4, 0x2D
     #define PHYSICAL_Y 0x46, 0x20, 0x1C
     #define PHYSICAL_UNIT_EXPONENT 0x55, 0x0D
