@@ -1,11 +1,64 @@
 menu "TouchPad Configuration"
 
-    config TOUCHPAD_HAPTIC_FEEDBACK
-    bool "Support Haptic Feedback (HID Page 0x0E)"
-    default n
-    help
-      Enables support for Simple Haptic Controller. 
-      This allows the host to trigger vibration waveforms 
-      for clicks and other UI interactions.
-      
+    menu "USB Descriptor Options"
+
+        config TOUCHPAD_MANUFACTURER_STRING
+            string "TouchPad Manufacturer"
+            default  "R-SODIUM Technology"
+
+        config TOUCHPAD_PRODUCT_STRING
+            string "TouchPad Product"
+            default  "R-SODIUM Precision TouchPad"
+
+        config TOUCHPAD_SERIAL_NUMBER_STRING
+            string "TouchPad Serial Number"
+            default  "0D00072A00000000"
+
+        config  TOUCHPAD_HID_INTERFACE_STRING
+            string "TouchPad HID Interface"
+            default  "Precision Touchpad HID Interface"
+            depends on n
+
+    endmenu
+
+    menu "Receiver Configuration"
+
+    config RECEIVER_MAC_ADDR
+        string "Receiver MAC Address"
+        default "FF:FF:FF:FF:FF:FF"
+        help
+            Enter the MAC address of your PTP 2.4G Reciever in XX:XX:XX:XX:XX:XX format.
+
+    endmenu
+
+    menu  "Feature Options"
+    
+        config TOUCHPAD_SPECIFATION_MODEL
+            bool "Enable TouchPad Specification Model"
+            default n
+            help
+                Enable this option to use the TouchPad specification model for 2.4G reciever.
+                Warning: Enabling this option may cause compatibility issues with some devices. Use with caution.
+
+        choice
+            prompt "Select TouchPad Model"
+            default ELAN_LENOVO_33370A
+            depends on TOUCHPAD_SPECIFATION_MODEL
+            help
+            Select TouchPad model what you used. Different model may use different solution to translate hid data.
+
+        config ELAN_LENOVO_33370A
+            bool "Lenovo ELAN 33370A TouchPad (Rev.A S8974A)"
+        
+        config HANTICK_LENOVO_HTT5288
+            bool "Lenovo HanTick HTT5288 TouchPad (HTX11974TI)"
+            depends on n
+
+        config MI_GOODIX_HAPTIC_ENGINE
+            bool "XiaoMi book 14/16 pro Goodix TouchPad"
+
+        endchoice
+
+    endmenu
+
 endmenu

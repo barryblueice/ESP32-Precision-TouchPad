@@ -56,7 +56,6 @@ const uint8_t mouse_hid_report_descriptor[] = {
 
 };
 
-#if !CONFIG_TOUCHPAD_HAPTIC_FEEDBACK
 const uint8_t ptp_hid_report_descriptor[] = {
 //TOUCH PAD input TLC
     0x05, 0x0d,                         // USAGE_PAGE (Digitizers)
@@ -321,7 +320,6 @@ const uint8_t ptp_hid_report_descriptor[] = {
     0xc0,                               // END_COLLECTION
     0xc0,                               // END_COLLECTION
 };
-#endif
 
 // enum {
 //     ITF_NUM_HID,
