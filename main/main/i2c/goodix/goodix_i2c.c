@@ -103,6 +103,7 @@ bool global_watchdog_start = false;
 uint16_t global_scan_time = 0;
 
 typedef enum {
+    TOUCH_NONE = 0,
     TOUCH_IDLE,
     TOUCH_TAP_CANDIDATE,
     TOUCH_DRAG
@@ -229,23 +230,22 @@ void goodix_i2c_task(void *arg) {
                         else if (abs(dy_raw) > abs(dx_raw) * 2 && abs(dx_raw) < 6) rx = last_raw_x[id];
 
                         int dx = abs((int)rx - (int)origin_x[id]);
-                            int dy = abs((int)ry - (int)origin_y[id]);
+                        int dy = abs((int)ry - (int)origin_y[id]);
 
-                            if (touch_state[id] == TOUCH_TAP_CANDIDATE && (dx > TAP_DEADZONE || dy > TAP_DEADZONE)) {
+                        int active_deadzone = (tp_current_state.actual_count > 1) ? (TAP_DEADZONE / 2) : TAP_DEADZONE;
+
+
+                        if (dx > active_deadzone || dy > active_deadzone) {
+                            if (touch_state[id] == TOUCH_TAP_CANDIDATE) {
                                 touch_state[id] = TOUCH_DRAG;
-                                tap_frozen[id] = false;
                             }
+                            tap_frozen[id] = false; 
+                        }
 
-                        if (touch_state[id] == TOUCH_TAP_CANDIDATE) {
-                            if (!tap_frozen[id]) {
-                                tap_frozen[id] = true;
-                                filtered_x[id] = origin_x[id] << 8;
-                                filtered_y[id] = origin_y[id] << 8;
-                            }
+                        if (tap_frozen[id]) {
                             tp_current_state.fingers[id].x = origin_x[id];
                             tp_current_state.fingers[id].y = origin_y[id];
                         } else {
-                            tap_frozen[id] = false;
                             tp_current_state.fingers[id].x = fx;
                             tp_current_state.fingers[id].y = fy;
                         }
@@ -258,20 +258,23 @@ void goodix_i2c_task(void *arg) {
                                 count++;
                             }
                         }
-                        if (count > 1) {
-                            int avg_x = sum_x / count;
-                            int avg_y = sum_y / count;
-                            for (int i = 0; i < 5; i++) {
-                                if (tap_frozen[i]) {
-                                    origin_x[i] = avg_x;
-                                    origin_y[i] = avg_y;
-                                }
-                            }
-                        }
+
                         if ((finger_life_status & 0x0F) == 0x03) {
                             tp_current_state.fingers[id].tip_switch = 1;
+                            last_raw_x[id] = rx;
+                            last_raw_y[id] = ry;
                         } else {
                             tp_current_state.fingers[id].tip_switch = 0;
+                            last_raw_x[id] = 0;
+                            last_raw_y[id] = 0;
+                            origin_x[id] = 0;
+                            origin_y[id] = 0;
+                            touch_state[id] = TOUCH_NONE;
+                            tap_frozen[id] = false;
+                            for(int h=0; h<HISTORY_LEN; h++) {
+                                raw_x_history[id][h] = 0;
+                                raw_y_history[id][h] = 0;
+                            }
                         }
                         tp_current_state.fingers[id].contact_id = id;
                     }
