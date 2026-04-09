@@ -133,5 +133,5 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
 
 # 相关的衍生计划：
 
- - ESP32 Haptic Precision TouchPad - 基于Surface Laptop Studio 1964的可调触摸反馈的压感触摸板。 (Link)[https://github.com/barryblueice/ESP32-Haptic-Precision-TouchPad]
- - R-SODIUM Precision TouchPad Configurator - R-SODIUM触摸板产品系列的GUI设置软件。 (Link)[https://github.com/barryblueice/R-SODIUM-Precision-TouchPad-Configurator]
+ - ESP32 Haptic Precision TouchPad - 基于Surface Laptop Studio 1964的可调触摸反馈的压感触摸板。 [Link](https://github.com/barryblueice/ESP32-Haptic-Precision-TouchPad)
+ - R-SODIUM Precision TouchPad Configurator - R-SODIUM触摸板产品系列的GUI设置软件。 [Link](https://github.com/barryblueice/R-SODIUM-Precision-TouchPad-Configurator)
