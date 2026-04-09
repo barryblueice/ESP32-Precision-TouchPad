@@ -30,6 +30,12 @@ menu "TouchPad Configuration"
                 Enable this option to use the TouchPad specification model for 2.4G reciever.
                 Warning: Enabling this option may cause compatibility issues with some devices. Use with caution.
 
+        config CONN_LED_GPIO_CFG
+            int "Connection LED GPIO Configuration"
+            default 9
+            help
+                Set the GPIO pin number for the connection LED. This LED will indicate the connection status of the TouchPad.
+
         choice
             prompt "Select TouchPad Model"
             default ELAN_LENOVO_33370A

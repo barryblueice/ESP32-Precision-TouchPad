@@ -9,6 +9,8 @@
 #include "esp_wifi.h"
 #include "nvs_flash.h"
 
+#include "sdkconfig.h"
+
 #include "wireless/wireless.h"
 
 QueueHandle_t tp_queue = NULL;
@@ -40,7 +42,7 @@ static void wifi_now_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t
 
         case VBUS_STATUS: 
     
-            gpio_set_level(GPIO_NUM_38, msg->payload.vbus.vbus_level);
+            gpio_set_level(CONFIG_CONN_LED_GPIO_CFG, msg->payload.vbus.vbus_level);
             // ESP_DRAM_LOGI(TAG, "Remote VBUS Level: %d", msg->payload.vbus.vbus_level);
             break;
 
@@ -48,7 +50,7 @@ static void wifi_now_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t
 
             // ESP_DRAM_LOGI(TAG,"LAST_SEEN_TIMESTAMP before: %u", last_seen_timestamp);
             last_seen_timestamp = xTaskGetTickCount();
-            gpio_set_level(GPIO_NUM_38, msg->payload.alive.vbus_level);
+            gpio_set_level(CONFIG_CONN_LED_GPIO_CFG, msg->payload.alive.vbus_level);
             if (msg->payload.alive.vbus_level == 0) {
                 if (alive_status == 0) {
                     ESP_LOGI(TAG, "Device online, sending current mode: %d", current_mode);
@@ -70,13 +72,13 @@ void wifi_recieve_task_init() {
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_OUTPUT_OD,
-        .pin_bit_mask = (1ULL << GPIO_NUM_38),
+        .pin_bit_mask = (1ULL << CONFIG_CONN_LED_GPIO_CFG),
         .pull_up_en = GPIO_PULLUP_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
     };
     gpio_config(&io_conf);
 
-    gpio_set_level(GPIO_NUM_38, 1);
+    gpio_set_level(CONFIG_CONN_LED_GPIO_CFG, 1);
     
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
