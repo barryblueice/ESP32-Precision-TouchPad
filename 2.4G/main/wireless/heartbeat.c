@@ -8,13 +8,11 @@
 #include "sdkconfig.h"
 
 uint32_t last_seen_timestamp = 0;
-uint8_t alive_status = 0;
 
 void monitor_link_task(void *arg) {
     while(1) {
         if ((xTaskGetTickCount() - last_seen_timestamp) > pdMS_TO_TICKS(5000)) {
             gpio_set_level(CONFIG_CONN_LED_GPIO_CFG, 1);
-            alive_status = 0;
         } else {
             gpio_set_level(CONFIG_CONN_LED_GPIO_CFG, 0);
         }

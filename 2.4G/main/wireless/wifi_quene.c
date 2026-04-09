@@ -18,8 +18,6 @@ QueueHandle_t mouse_queue = NULL;
 QueueSetHandle_t main_queue_set = NULL;
 volatile uint8_t current_mode = MOUSE_MODE;
 
-extern uint8_t alive_status;
-
 static const char *TAG = "WIFI_QUENE";
 
 static void wifi_now_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, int len) {
@@ -52,13 +50,8 @@ static void wifi_now_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t
             last_seen_timestamp = xTaskGetTickCount();
             gpio_set_level(CONFIG_CONN_LED_GPIO_CFG, msg->payload.alive.vbus_level);
             if (msg->payload.alive.vbus_level == 0) {
-                if (alive_status == 0) {
-                    ESP_LOGI(TAG, "Device online, sending current mode: %d", current_mode);
-                    esp_now_send(broadcast_mac, (const uint8_t *)&current_mode, 1);
-                    alive_status = 1;
-                }
-            } else {
-                alive_status = 0;
+                ESP_LOGI(TAG, "Device online, sending current mode: %d", current_mode);
+                esp_now_send(broadcast_mac, (const uint8_t *)&current_mode, 1);
             }
             break;
 

@@ -27,6 +27,9 @@ void wifi_now_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data,
                     current_mode = MOUSE_MODE;
                     activate_mouse();
                 }
+
+                last_ptp_input_mode = received_cmd;
+
             }
         }
     }
