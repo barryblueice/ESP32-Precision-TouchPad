@@ -103,7 +103,8 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
 
  - ~~Two fingers tap (equal to right click) can only trigger on laptop.~~<br>
    > The triggering issue was caused by the missing of physical XY dimensions, and it has now been fixed.<br>
-   > To ensure the best compatibility among different touchpad devices, the receiver will not report the PHYSICAL coordinates. Some functions maybe unavailable.
+   > To ensure the best compatibility among different touchpad devices, the receiver will not report the PHYSICAL coordinates in default. Some functions maybe unavailable.<br>
+   > If you ONLY use specific model touchpad, you can choose the model in `sdkconfig` from `2.4G` project. [For more details, please refer to "Setup & Configuration" section of the 2.4G receiver.](https://github.com/barryblueice/ESP32-Precision-TouchPad/wiki/Setup%20&%20Configuration)
  - ~~Multi-Port HID compatibility design may not support on some old system, like Windows XP.~~<br>
    > This was caused by a bug in the HID Descriptor I programmed, and it has now been fixed.
  - ~~Cannot perform rapid and consecutive clicks.~~

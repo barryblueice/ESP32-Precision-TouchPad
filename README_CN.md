@@ -107,7 +107,8 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
    > 触发问题是由于物理XY尺寸缺失导致，现已修复。
  - ~~为兼容而设计的HID多端口方案在部分老系统上可能无法使用，例如Windows XP。~~<br>
    > 这是由于HID Descriptor的BUG导致，现已修复。<br>
-   > 为了确保不同触摸板设备之间的最佳兼容性，接收器不会上报PHYSICAL坐标。部分功能可能不可用。
+   > 为了确保不同触摸板设备之间的最佳兼容性，接收器默认不会上报PHYSICAL坐标。部分功能可能不可用。<br>
+   > 如果你只用特定型号的触摸板，你可以在`2.4G`项目文件夹中设置`sdkconfig`。[若想了解更多请看2.4G接收器的使用说明部分](https://github.com/barryblueice/ESP32-Precision-TouchPad/wiki/%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E)
  - ~~不能快速连续单击。~~
    > 这是由于HID报文中Confidence&Tip标识符缺失导致，现已修复。
  - 由于处理器限制，原生PTP Mode仅支持有线连接模式/2.4G无线模式。<br>蓝牙模式需要后期更换为ESP32-S3。
