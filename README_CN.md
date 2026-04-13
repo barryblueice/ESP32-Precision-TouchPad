@@ -111,6 +111,7 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
  - ~~不能快速连续单击。~~
    > 这是由于HID报文中Confidence&Tip标识符缺失导致，现已修复。
  - 由于处理器限制，原生PTP Mode仅支持有线连接模式/2.4G无线模式。<br>蓝牙模式需要后期更换为ESP32-S3。
+   > 新项目 [ESP32 Haptic Precision TouchPad](https://github.com/barryblueice/ESP32-Haptic-Precision-TouchPad) 支持三模链接（蓝牙、2.4G和有线连接）， 目前仍在开发中。
 
  ***
 
