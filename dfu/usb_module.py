@@ -4,8 +4,13 @@ from PySide6.QtCore import QThread, Signal
 import hid
 import os
 
-VID = 0x0D00
-PID = 0x072A
+TARGET_DEVICES = [
+    (0x0D00, 0x072A),
+    (0x0D00, 0x072B),
+    (0x0D00, 0x072C),
+    (0x0D00, 0x072D),
+]
+
 REPORT_SIZE = 64
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -36,9 +41,14 @@ class USBCommunicatorThread(QThread):
         while self.running:
             try:
                 device_info = None
-                for d in hid.enumerate(VID, PID):
-                    if d['interface_number'] == self.target_interface:
-                        device_info = d
+                for vid, pid in TARGET_DEVICES:
+                    VID = vid
+                    PID = pid
+                    for d in hid.enumerate(vid, pid):
+                        if d['interface_number'] == self.target_interface:
+                            device_info = d
+                            break
+                    if device_info:
                         break
 
                 if device_info and not self.device_present:

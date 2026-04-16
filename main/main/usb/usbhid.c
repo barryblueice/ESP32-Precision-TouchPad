@@ -130,6 +130,7 @@ void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_
         enter_dfu_mode();
     }
 }
+
 #define USB_CONNECTED BIT0
 
 EventGroupHandle_t usb_event_group;
