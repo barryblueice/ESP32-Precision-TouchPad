@@ -1,4 +1,5 @@
 #include "esp_log.h"
+#include "soc/rtc_cntl_reg.h"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -8,15 +9,18 @@
 #include "tusb.h"
 #include "class/hid/hid_device.h"
 
+#include "esp_wifi.h"
+#include "esp_now.h"
+
 #include "esp_timer.h"
 
 #include "math.h"
 
-#include "wireless/wireless.h"
-
 #include "usb/usbhid.h"
 
-#include "esp_now.h"
+#include "wireless/wireless.h"
+
+#include "sdkconfig.h"
 
 #define TPD_REPORT_SIZE   6
 
@@ -32,7 +36,18 @@ static const char *TAG = "USB_HID_TP";
 #define TPD_REPORT_ID 0x01
 #define TPD_REPORT_SIZE_WITHOUT_ID (sizeof(touchpad_report_t) - 1)
 
-const float SENSITIVITY = 3.0f;
+#define SENSITIVITY 3.0f
+
+#define REPORTID_DFU_CMD  0xFF
+
+void enter_dfu_mode(void)
+{
+
+    ESP_LOGW(TAG, "Preparing to enter ROM DFU mode...");
+    REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    esp_restart();
+}
 
 // USB Device Descriptor
 tusb_desc_device_t const desc_device = {
@@ -99,10 +114,17 @@ static uint8_t ptp_input_mode = 0x00;
 
 void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t const *buffer, uint16_t bufsize) {
     (void)instance;
+
+    uint8_t command = buffer[0];
+
     if (report_type == HID_REPORT_TYPE_FEATURE && report_id == REPORTID_FEATURE) {
         if (bufsize >= 1) {
             ptp_input_mode = buffer[0];
         }
+    }
+
+    if (command == REPORTID_DFU_CMD) {
+        enter_dfu_mode();
     }
 }
 
