@@ -1,6 +1,5 @@
 #include "wireless/wireless.h"
 #include "i2c/I2C_HID_Report.h"
-#include "i2c/ELAN/elan_i2c.h"
 #include "esp_wifi.h"
 #include "esp_now.h"
 #include "esp_log.h"
