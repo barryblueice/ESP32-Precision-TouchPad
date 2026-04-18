@@ -1,6 +1,6 @@
 [英文](https://github.com/barryblueice/ESP32-Precision-TouchPad/blob/main/README.md) | [简体中文](https://github.com/barryblueice/ESP32-Precision-TouchPad/blob/main/README_CN.md)
 
-<img width="900" height="723" alt="image" src="https://github.com/user-attachments/assets/6dd84c6f-8089-4962-9cd4-7cbeaad9e661" />
+<img width="975" height="640" alt="D1715F573B20881EF7D5288A19565C22" src="https://github.com/user-attachments/assets/7932252b-1d9c-4764-9f9f-d5c43f84470c" />
 
 # **这是什么？**
 
@@ -25,9 +25,7 @@
 > [!IMPORTANT]  
 > 小米所宣发的压感触摸板只是将传统的机械结构更换为了压感马达触发，并不是完全的压感识别（没有压感反馈调整）。<br>
 > 由于资料稀缺，目前goodix的逆向工程正在推进中。<br>
-> ~~目前已完成了HID Descriptor的逆向工程和触摸HID报文转译优化并上报，但是触摸算法需要优化。~~<br>
-  ~~目前操作较为卡顿，不如ELAN触摸板顺滑。~~<br>
-  小米触摸板的问题是由于PCB信号干扰，重新打板后大部分BUG已解决。
+> 推荐复刻XiaoMi Goodix触摸板。
 
 
 #### **精确式触摸板模式演示：**
