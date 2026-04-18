@@ -1,6 +1,6 @@
 [English](https://github.com/barryblueice/ESP32-Precision-TouchPad/blob/main/README.md) | [Simplified Chinese](https://github.com/barryblueice/ESP32-Precision-TouchPad/blob/main/README_CN.md)
 
-<img width="900" height="723" alt="image" src="https://github.com/user-attachments/assets/6dd84c6f-8089-4962-9cd4-7cbeaad9e661" />
+<img width="975" height="640" alt="D1715F573B20881EF7D5288A19565C22" src="https://github.com/user-attachments/assets/7932252b-1d9c-4764-9f9f-d5c43f84470c" />
 
 # **What's This?**
 
@@ -24,9 +24,7 @@ Also include a HP fingerprint module, in order to support fingerprint for Window
 
 > [!IMPORTANT]  
 > The pressure-sensitive touchpad promoted by Xiaomi merely replaced the traditional mechanical structure with a pressure-sensitive motor trigger, it is not a complete pressure-sensing recognition (there is no pressure-sensing feedback adjustment).<br>
-> ~~Due to the lack of relevant data, the reverse engineering of Goodix is currently underway.~~<br>
-> ~~The reverse engineering of the HID Descriptor has been completed, as well as the optimization of the translation of touch HID messages and the report has been submitted, but the touch algorithm needs to be optimized.~~<br>
-> The problem with the Xiaomi touch panel was caused by PCB signal interference. It was resolved after re-laying the board.
+> Recommand to use XiaoMi Goodix TouchPad.
 
 #### **PTP Mode Demonstration**:
 
