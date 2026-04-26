@@ -16,13 +16,13 @@
 ### **目前支持的触摸板型号（已经过测试）:**
  - 联想ELAN 33370A触摸板 (板号Rev.A S8974A, 传统机械设计)
  - 小米book pro 2022 14/16 汇顶 GT7863触摸板（压感触摸板）
-   
+
 ### **硬件开源地址：[基于ESP32的Windows精确式触摸板](https://oshwhub.com/barryblueice/esp32-precision-touchpad)**
 
 > [!CAUTION]
 > 硬件&软件仅适配上面提到的触摸板型号，未经测试的触摸板型号可能会因不兼容导致无法驱动或短路烧毁。
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > 小米所宣发的压感触摸板只是将传统的机械结构更换为了压感马达触发，并不是完全的压感识别（没有压感反馈调整）。<br>
 > 推荐复刻XiaoMi Goodix触摸板。
 
@@ -114,7 +114,7 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
  ***
 
 # 目前支持的系统（已经过测试）：
- 
+
  - Windows XP （鼠标模式）；
  - Windows 7 （鼠标模式）；
  - Windows 10/11（精确式触摸板模式）；
@@ -132,5 +132,5 @@ https://github.com/user-attachments/assets/dce2b15a-eb64-4c0a-b503-1ea32e15b02b
 
 # 相关的衍生计划：
 
- - ESP32 Haptic Precision TouchPad - 基于Surface Laptop Studio 1964的可调触摸反馈的压感触摸板。 [Link](https://github.com/barryblueice/ESP32-Haptic-Precision-TouchPad)
- - R-SODIUM Precision TouchPad Configurator - R-SODIUM触摸板产品系列的GUI设置软件。 [Link](https://github.com/barryblueice/R-SODIUM-Precision-TouchPad-Configurator)
+ - [ESP32 Haptic Precision TouchPad](https://github.com/barryblueice/ESP32-Haptic-Precision-TouchPad) - 基于Surface Laptop Studio 1964的可调触摸反馈的压感触摸板。
+ - [R-SODIUM Precision TouchPad Configurator](https://github.com/barryblueice/R-SODIUM-Precision-TouchPad-Configurator) - R-SODIUM触摸板产品系列的GUI设置软件。

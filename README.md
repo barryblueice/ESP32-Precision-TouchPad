@@ -4,13 +4,13 @@
 
 # **What's This?**
 
-A touchpad peripheral device based on ESP32-S2 + specific laptop TouchPad. 
+A touchpad peripheral device based on ESP32-S2 + specific laptop TouchPad.
 
- - Compatible with Microsoft Precision TouchPad (PTP) standard. 
- - Supported Windows Touch Gesture. 
+ - Compatible with Microsoft Precision TouchPad (PTP) standard.
+ - Supported Windows Touch Gesture.
  - Supported Taptic Engine.
    > Taptic Engine still in development.
- 
+
 Also include a HP fingerprint module, in order to support fingerprint for Windows Hello.
 
 ### **Currently Touchpad Support (already tested):**
@@ -22,7 +22,7 @@ Also include a HP fingerprint module, in order to support fingerprint for Window
 > [!CAUTION]
 > Hardware & software only support the models of the touchpad mentioned above, untested touchpad models may be incompatible. <br>Use of such models can lead to driver failure or permanent hardware damage caused by short circuits!
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > The pressure-sensitive touchpad promoted by Xiaomi merely replaced the traditional mechanical structure with a pressure-sensitive motor trigger, it is not a complete pressure-sensing recognition (there is no pressure-sensing feedback adjustment).<br>
 > Recommand to use XiaoMi Goodix TouchPad.
 
@@ -131,8 +131,8 @@ Please go to [wiki page](https://github.com/barryblueice/ESP32-Precision-TouchPa
 
 # Related derivative projects:
 
- - ESP32 Haptic Precision TouchPad - basing on TouchPad module for Surface Laptop Studio 1964 with feedback adjustment. [Link](https://github.com/barryblueice/ESP32-Haptic-Precision-TouchPad)
- - R-SODIUM Precision TouchPad Configurator - GUI Manager for R-SODIUM Precision TouchPad Product series. [Link](https://github.com/barryblueice/R-SODIUM-Precision-TouchPad-Configurator)
+ - [ESP32 Haptic Precision TouchPad](https://github.com/barryblueice/ESP32-Haptic-Precision-TouchPad) - basing on TouchPad module for Surface Laptop Studio 1964 with feedback adjustment.
+ - [R-SODIUM Precision TouchPad Configurator](https://github.com/barryblueice/R-SODIUM-Precision-TouchPad-Configurator) - GUI Manager for R-SODIUM Precision TouchPad Product series.
 
 
 
